@@ -1,0 +1,14 @@
+[tools]
+bun = "latest"
+
+[tasks.install]
+description = "Install dependencies"
+run = "bun install"
+
+[tasks.test]
+description = "Run tests"
+run = "bun test"
+
+[tasks.describe]
+description = "Print plugin manifest"
+run = "bun src/index.ts --describe"

@@ -1,0 +1,12 @@
+{
+  "name": "@nullplatform/service-{{ .Name }}",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@nullplatform/plugin-sdk": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0"
+  }
+}

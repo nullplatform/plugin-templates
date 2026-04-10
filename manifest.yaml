@@ -1,0 +1,45 @@
+version: 1
+
+# Templates registry for `np plugin init`.
+# Each template maps to a directory under templates/<path>/ whose files
+# are rendered with Go text/template + sprig helpers.
+
+templates:
+  - id: bun-simple
+    path: bun/simple
+    name: Bun simple plugin
+    description: Minimal TypeScript plugin (no scope/service wiring)
+    lang: bun
+    type: simple
+    variables:
+      - name: Name
+        prompt: Plugin name
+        validator: kebab-case
+
+  - id: bun-scope
+    path: bun/scope
+    name: Bun scope plugin
+    description: TypeScript scope plugin with defineScope() + workflow actions
+    lang: bun
+    type: scope
+    variables:
+      - name: Name
+        prompt: Plugin name
+        validator: kebab-case
+      - name: Category
+        prompt: Category
+        default: custom
+      - name: Provider
+        prompt: Provider
+        default: custom
+
+  - id: bun-service
+    path: bun/service
+    name: Bun service plugin
+    description: TypeScript service plugin (not implemented yet)
+    lang: bun
+    type: service
+    variables:
+      - name: Name
+        prompt: Plugin name
+        validator: kebab-case

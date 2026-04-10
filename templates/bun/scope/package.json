@@ -1,0 +1,18 @@
+{
+  "name": "@nullplatform/scope-{{ .Name }}",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@nullplatform/plugin-sdk": "latest",
+    "@nullplatform/workflow": "latest",
+    "@nullplatform/workflow-engine": "latest",
+    "@nullplatform/workflow-engine-in-memory": "latest",
+    "@nullplatform/task": "latest",
+    "@nullplatform/if": "latest",
+    "@nullplatform/no-op": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0"
+  }
+}
