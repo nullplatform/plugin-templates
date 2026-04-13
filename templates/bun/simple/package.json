@@ -1,10 +1,12 @@
 {
   "name": "@nullplatform/plugin-{{ .Slug }}",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@nullplatform/plugin": "latest"
+    "@nullplatform/plugin": "^0.0.1",
+    "@nullplatform/workflow": "^0.0.1",
+    "@nullplatform/workflow-engine-in-memory": "^0.0.1"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0"
