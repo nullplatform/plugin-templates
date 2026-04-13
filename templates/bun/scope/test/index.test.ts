@@ -11,7 +11,7 @@ describe("{{ .Name }} plugin", () => {
     await proc.exited;
     const manifest = JSON.parse(output);
 
-    expect(manifest.name).toBe("{{ .Name }}");
+    expect(manifest.name).toBe("{{ .Slug }}");
     expect(manifest.version).toBe("0.1.0");
     expect(manifest.schema.properties.enabled).toBeDefined();
     expect(manifest.actions["create-scope"]).toBeDefined();

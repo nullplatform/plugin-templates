@@ -1,0 +1,10 @@
+#!/bin/sh
+# np-agent execs this file as the plugin in dev mode. It shells to
+# `bun --hot` so source edits trigger a module reload inside the SAME
+# process — the plugin SDK's gRPC server is idempotent across reloads,
+# so np-agent's connection stays live and there's no agent restart
+# between edits.
+#
+# Production runs a compiled single-file binary from dist/ instead,
+# so this wrapper only matters for `mise run dev:agent`.
+exec bun --hot src/index.ts "$@"

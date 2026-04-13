@@ -1,45 +1,82 @@
 version: 1
 
 # Templates registry for `np plugin init`.
-# Each template maps to a directory under templates/<path>/ whose files
-# are rendered with Go text/template + sprig helpers.
+#
+# Model: plugins have TWO orthogonal dimensions.
+#
+#   1. CATEGORY — what the plugin is (the problem it solves).
+#      Defined once in `categories`. Drives the first picker step.
+#
+#   2. SDK — how the plugin is implemented (runtime, language, framework).
+#      Defined once in `sdks`. Drives the second picker step.
+#
+# `templates` is the sparse matrix: each entry is a (category, sdk) pair
+# pointing at a filesystem directory in `templates/<path>`. A template
+# exists only for combinations we actually support.
+#
+# Display metadata (names, descriptions) lives on categories and sdks —
+# NOT on individual templates — so the pickers stay clean and the same
+# category reads identically whether you pick Bun or Go or Terraform.
 
-templates:
-  - id: bun-simple
-    path: bun/simple
-    name: Bun simple plugin
-    description: Minimal TypeScript plugin (no scope/service wiring)
-    lang: bun
-    type: simple
+categories:
+  - type: scope
+    name: Deployment target
+    description: Let the platform deploy apps to a new kind of infrastructure (Kubernetes, Lambda, ECS, bare metal, on-prem VMs…).
     variables:
       - name: Name
         prompt: Plugin name
-        validator: kebab-case
-
-  - id: bun-scope
-    path: bun/scope
-    name: Bun scope plugin
-    description: TypeScript scope plugin with defineScope() + workflow actions
-    lang: bun
-    type: scope
-    variables:
-      - name: Name
-        prompt: Plugin name
-        validator: kebab-case
+        hint: "human-readable — e.g. 'Kubernetes K3D', 'AWS Lambda', 'ECS Fargate' (slug is auto-derived)"
       - name: Category
         prompt: Category
         default: custom
+        hint: "how the platform UI groups this — e.g. container, serverless, vm, function, or 'custom'"
       - name: Provider
         prompt: Provider
         default: custom
+        hint: "the underlying infra provider — e.g. aws, gcp, azure, kubernetes, on-prem, or 'custom'"
 
-  - id: bun-service
-    path: bun/service
-    name: Bun service plugin
-    description: TypeScript service plugin (not implemented yet)
-    lang: bun
-    type: service
+  - type: simple
+    name: Custom command handler
+    description: Run code when the platform dispatches a command — health checks, migrations, notifications, data sync, anything the agent should execute on your behalf.
     variables:
       - name: Name
         prompt: Plugin name
-        validator: kebab-case
+        hint: "human-readable — e.g. 'DB Migrator', 'Slack Notifier', 'Secret Rotator' (slug is auto-derived)"
+
+  - type: service
+    name: Application dependency
+    description: Wire up anything an application needs to run or operate — databases, caches, queues, load balancers, API gateways, observability (Datadog, Grafana, …), CDNs.
+    variables:
+      - name: Name
+        prompt: Plugin name
+        hint: "human-readable — e.g. 'Postgres', 'Redis', 'Datadog', 'CloudFront CDN' (slug is auto-derived)"
+
+sdks:
+  - id: bun
+    name: Bun
+    description: TypeScript with zero-config and first-class bundling. Fast dev iteration, single-file compiled binary via `bun build --compile` for production.
+
+  # Future SDKs (not yet shipped):
+  # - id: terraform
+  #   name: Terraform / OpenTofu
+  #   description: Declarative IaC. Best when the plugin wires up cloud resources via existing Terraform providers (AWS, GCP, Azure, Kubernetes, …).
+  # - id: go
+  #   name: Go
+  #   description: Native Go. Best for system integrations, heavy concurrency, or reusing the nullplatform Go SDKs directly.
+  # - id: python
+  #   name: Python
+  #   description: Python 3.11+. Best for ML/data workflows and teams with deep Python expertise.
+
+templates:
+  - id: bun-scope
+    path: bun/scope
+    type: scope
+    sdk: bun
+  - id: bun-simple
+    path: bun/simple
+    type: simple
+    sdk: bun
+  - id: bun-service
+    path: bun/service
+    type: service
+    sdk: bun

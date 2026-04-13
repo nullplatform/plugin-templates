@@ -1,11 +1,11 @@
-import { createPlugin, registerManifest } from "@nullplatform/plugin-sdk";
+import { createPlugin, registerManifest } from "@nullplatform/plugin";
 
-registerManifest({ name: "{{ .Name }}", version: "0.1.0", command_types: ["custom"] });
+registerManifest({ name: "{{ .Slug }}", version: "0.1.0", command_types: ["custom"] });
 
 createPlugin({
   async execute(req) {
     const payload = JSON.parse(req.payload.toString("utf-8"));
-    console.log(`[{{ .Name }}] Received action: ${req.actionType}`, payload);
+    console.log(`[{{ .Slug }}] Received action: ${req.actionType}`, payload);
 
     // TODO: implement your plugin logic here
 

@@ -1,9 +1,14 @@
-import { createPlugin, registerManifest } from "@nullplatform/plugin-sdk";
+import { createPlugin, registerManifest } from "@nullplatform/plugin";
 
-registerManifest({ name: "{{ .Name }}", version: "0.1.0", command_types: ["service"] });
+registerManifest({ name: "{{ .Slug }}", version: "0.1.0", command_types: ["service"] });
 
 createPlugin({
-  async execute(_req) {
-    throw new Error("Service plugins are not implemented yet");
+  async execute(req) {
+    const payload = JSON.parse(req.payload.toString("utf-8"));
+    console.log(`[{{ .Slug }}] Received action: ${req.actionType}`, payload);
+
+    // TODO: implement your service plugin logic here
+
+    return { success: true, data: { message: "Hello from {{ .Name }}" } };
   },
 }).start();

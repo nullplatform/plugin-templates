@@ -2,7 +2,7 @@ import { workflow } from "@nullplatform/workflow";
 import type { DeploymentActionInput } from "../index";
 import { buildContext } from "../context";
 
-export const startInitial = workflow<DeploymentActionInput>("{{ .Name }}:start-initial")
+export const startInitial = workflow<DeploymentActionInput>("{{ .Slug }}:start-initial")
   .task("build-context", ({ input }) => buildContext(input))
   .task("deploy", async ({ result: ctx }) => {
     // TODO: implement initial deployment

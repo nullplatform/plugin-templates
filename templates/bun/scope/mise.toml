@@ -1,14 +1,66 @@
 [tools]
 bun = "latest"
 
+# Install runs on demand and is the root of the task dependency graph.
+# Every other task declares `depends = ["install"]` so a fresh clone
+# just works — no need to remember `mise install` before `mise run dev`.
 [tasks.install]
 description = "Install dependencies"
 run = "bun install"
+sources = ["package.json", "bun.lock"]
 
 [tasks.test]
 description = "Run tests"
+depends = ["install"]
 run = "bun test"
 
 [tasks.describe]
 description = "Print plugin manifest"
+depends = ["install"]
 run = "bun src/index.ts --describe"
+
+[tasks.build]
+description = "Compile the plugin to a standalone executable"
+depends = ["install"]
+run = "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}"
+sources = ["src/**/*.ts", "package.json", "bun.lock"]
+outputs = ["dist/{{ .Slug }}"]
+
+[tasks."build:all"]
+description = "Cross-compile all release targets"
+depends = ["install"]
+run = """
+bun build --compile --target=bun-linux-x64   ./src/index.ts --outfile dist/{{ .Slug }}-linux-x64
+bun build --compile --target=bun-linux-arm64 ./src/index.ts --outfile dist/{{ .Slug }}-linux-arm64
+bun build --compile --target=bun-darwin-arm64 ./src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
+"""
+
+# `np plugin dev` → this task. For plugins the dev workflow is the
+# form-based UI tester (plugin-dev-ui) which renders the plugin schema and
+# lets you trigger actions interactively.
+[tasks.dev]
+description = "Run the plugin with the scope dev UI"
+depends = ["install"]
+run = "bunx @nullplatform/plugin-dev-ui --plugin ."
+
+# `np plugin dev --agent` → this task. Starts `np-agent` locally and
+# points it at `./bin`, where a single shebang wrapper (bin/{{ .Slug }})
+# shells to `bun --hot src/index.ts`. Source edits hot-reload inside the
+# same bun process, and the plugin SDK's gRPC server is idempotent
+# across reloads — so np-agent's connection survives every save.
+#
+# Customize by swapping/extending the body: add docker deps via depends,
+# override tags or API key via shell env, whatever fits your plugin.
+# Requires `np-agent` on $PATH and NP_API_KEY in the environment.
+[tasks."dev:agent"]
+description = "Run the plugin in dev mode with np-agent attached"
+depends = ["install"]
+run = "np-agent --runtime host --plugin-dir ./bin --tags env:dev,plugin:{{ .Slug }}"
+
+# `np plugin publish` → this task. Shells to the plugin SDK's publish
+# entry point. The SDK owns everything: artifact upload, scope type
+# registration, action specs, notification channel, schema sync.
+[tasks.publish]
+description = "Publish the plugin (artifact + platform API sync)"
+depends = ["build:all"]
+run = "bun src/index.ts --publish"

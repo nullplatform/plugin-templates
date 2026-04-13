@@ -1,5 +1,5 @@
-import { defineScope } from "@nullplatform/plugin-sdk/scope";
-import type { infer as Infer } from "@nullplatform/plugin-sdk/schema";
+import { defineScope } from "@nullplatform/plugin/scope";
+import type { infer as Infer } from "@nullplatform/plugin/schema";
 import { createScope } from "./actions/create-scope";
 import { deleteScope } from "./actions/delete-scope";
 import { startInitial } from "./actions/start-initial";
@@ -58,9 +58,9 @@ export type DeploymentActionInput = Infer<typeof deploymentAction>;
 // --- Plugin definition ---
 
 defineScope({
-  name: "{{ .Name }}",
+  name: "{{ .Slug }}",
   version: "0.1.0",
-  description: "{{ .Name | replace "-" " " | title }} scope plugin",
+  description: "{{ .Name }} scope plugin",
   category: "{{ .Category }}",
   provider: "{{ .Provider }}",
 
