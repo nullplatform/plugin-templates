@@ -86,7 +86,7 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "mise run test"
+      - "np plugin test            # run tests"
       - "np plugin dev             # local dev with UI"
       - "np plugin dev --agent     # local dev with np-agent attached"
       - "np plugin publish         # build + push to OCI + sync with platform"
@@ -100,7 +100,7 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "mise run test"
+      - "np plugin test            # run tests"
       - "np plugin dev             # local dev with hot reload"
       - "np plugin dev --agent     # local dev with np-agent attached"
       - "np plugin publish         # build + push to OCI"
@@ -114,7 +114,7 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "mise run test"
+      - "np plugin test            # run tests"
       - "np plugin dev             # local dev with hot reload"
       - "np plugin dev --agent     # local dev with np-agent attached"
       - "np plugin publish         # build + push to OCI"
