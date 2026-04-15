@@ -2,6 +2,9 @@
 bun = "latest"
 oras = "latest"
 
+# Install runs on demand and is the root of the task dependency graph.
+# Every other task declares `depends = ["install"]` so a fresh clone
+# just works — no need to remember `mise install` before `mise run dev`.
 [tasks.install]
 description = "Install dependencies"
 run = "bun install"
@@ -33,16 +36,34 @@ bun build --compile --target=bun-linux-arm64 ./src/index.ts --outfile dist/{{ .S
 bun build --compile --target=bun-darwin-arm64 ./src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
 """
 
+# `np plugin dev` → this task. Everyday dev workflow with hot reload.
+# Uses `bun --hot` (not `--watch`) so module changes reload inside the
+# same process — keeps the plugin SDK's idempotent startGrpcServer() in effect.
 [tasks.dev]
 description = "Run the plugin in dev mode"
 depends = ["install"]
 run = "bun run dev"
 
+# `np plugin dev --agent` → this task. Starts `np-agent` locally and
+# points it at `./bin`, where the entrypoint shebang wrapper
+# shells to `bun --hot src/index.ts`. Source edits hot-reload inside the
+# same bun process, and the plugin SDK's gRPC server is idempotent
+# across reloads — so np-agent's connection survives every save.
+#
+# Customize by swapping/extending the body: add docker deps via depends,
+# override tags or API key via shell env, whatever fits your plugin.
+# Requires `np-agent` on $PATH and NP_API_KEY in the environment.
 [tasks."dev:agent"]
 description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "bun run dev:agent"
 
+# `np plugin publish` → this task. Pushes the compiled binary as an OCI artifact.
+# Once defineService() ships in the SDK, add `bun run publish` for
+# platform API sync (same as scope plugins).
+#
+# Requires: oras CLI on $PATH, NP_PLUGIN_REGISTRY env var (or defaults to public ECR).
+# Auth to the OCI registry via `docker login`.
 [tasks.publish]
 description = "Build and push to OCI"
 depends = ["build:all"]

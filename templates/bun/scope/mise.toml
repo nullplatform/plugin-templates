@@ -2,6 +2,9 @@
 bun = "latest"
 oras = "latest"
 
+# Install runs on demand and is the root of the task dependency graph.
+# Every other task declares `depends = ["install"]` so a fresh clone
+# just works — no need to remember `mise install` before `mise run dev`.
 [tasks.install]
 description = "Install dependencies"
 run = "bun install"
@@ -33,16 +36,35 @@ bun build --compile --target=bun-linux-arm64 ./src/index.ts --outfile dist/{{ .S
 bun build --compile --target=bun-darwin-arm64 ./src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
 """
 
+# `np plugin dev` → this task. For scope plugins the dev workflow is the
+# form-based UI tester (plugin-dev-ui) which renders the plugin schema and
+# lets you trigger actions interactively against test fixtures.
 [tasks.dev]
 description = "Run the plugin with the dev UI"
 depends = ["install"]
 run = "bun run dev"
 
+# `np plugin dev --agent` → this task. Starts `np-agent` locally and
+# points it at `./bin`, where the entrypoint shebang wrapper
+# shells to `bun --hot src/index.ts`. Source edits hot-reload inside the
+# same bun process, and the plugin SDK's gRPC server is idempotent
+# across reloads — so np-agent's connection survives every save.
+#
+# Customize by swapping/extending the body: add docker deps via depends,
+# override tags or API key via shell env, whatever fits your plugin.
+# Requires `np-agent` on $PATH and NP_API_KEY in the environment.
 [tasks."dev:agent"]
 description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "bun run dev:agent"
 
+# `np plugin publish` → this task. Three phases:
+#   1. build:all — cross-compile for all platforms (dependency)
+#   2. oras push — push the linux-x64 binary as an OCI artifact
+#   3. platform API sync — register scope type, action specs, notification channel
+#
+# Requires: oras CLI on $PATH, NP_PLUGIN_REGISTRY env var (or defaults to public ECR),
+# NP_API_KEY for platform sync. Auth to the OCI registry via `docker login`.
 [tasks.publish]
 description = "Build, push to OCI, and sync with platform"
 depends = ["build:all"]
