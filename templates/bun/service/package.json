@@ -3,6 +3,13 @@
   "version": "0.0.1",
   "type": "module",
   "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "dev:agent": "np-agent --runtime host --plugin-dir ./bin --tags env:dev,plugin:{{ .Slug }}",
+    "test": "bun test",
+    "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
+    "describe": "bun src/index.ts --describe"
+  },
   "dependencies": {
     "@nullplatform/plugin": "^0.0.3",
     "@nullplatform/workflow": "^0.0.4",
