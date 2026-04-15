@@ -1,0 +1,39 @@
+{
+  "notification": {
+    "action": "service:action:deploy",
+    "id": "test-action-003",
+    "slug": "start-initial",
+    "name": "start-initial",
+    "type": "deploy",
+    "status": "pending",
+    "parameters": {
+      "scope_id": "10001",
+      "deployment_id": "dep-001"
+    },
+    "specification": { "id": "spec-003", "slug": "start-initial" },
+    "service": {
+      "id": "svc-001",
+      "slug": "my-app",
+      "attributes": {
+        "enabled": true,
+        "name": "my-app-dev",
+        "asset_url": "my-org/my-app:v1.2.3"
+      },
+      "type": "scope",
+      "specification": { "id": "scope-spec-001", "slug": "{{ .Slug }}" },
+      "dimensions": { "environment": "development" }
+    },
+    "tags": {
+      "scope_id": "10001",
+      "scope": "my-app-dev",
+      "application_id": "100",
+      "application": "my-app",
+      "namespace_id": "200",
+      "namespace": "development"
+    },
+    "entity_nrn": "organization=1:account=2:namespace=200:application=100:scope=10001",
+    "results": {},
+    "user": { "id": 1, "email": "dev@nullplatform.io" },
+    "link": null
+  }
+}

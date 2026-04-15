@@ -81,11 +81,40 @@ templates:
     path: bun/scope
     type: scope
     sdk: bun
+    post_init:
+      - "mise trust mise.toml"
+      - "mise install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "mise run test"
+      - "np plugin dev             # local dev with UI"
+      - "np plugin dev --agent     # local dev with np-agent attached"
+      - "np plugin publish         # build + push to OCI + sync with platform"
+
   - id: bun-simple
     path: bun/simple
     type: simple
     sdk: bun
+    post_init:
+      - "mise trust mise.toml"
+      - "mise install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "mise run test"
+      - "np plugin dev             # local dev with hot reload"
+      - "np plugin dev --agent     # local dev with np-agent attached"
+      - "np plugin publish         # build + push to OCI"
+
   - id: bun-service
     path: bun/service
     type: service
     sdk: bun
+    post_init:
+      - "mise trust mise.toml"
+      - "mise install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "mise run test"
+      - "np plugin dev             # local dev with hot reload"
+      - "np plugin dev --agent     # local dev with np-agent attached"
+      - "np plugin publish         # build + push to OCI"
