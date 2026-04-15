@@ -1,3 +1,4 @@
+import pkg from "../package.json";
 import { defineScope } from "@nullplatform/plugin/scope";
 import type { infer as Infer } from "@nullplatform/plugin/schema";
 import { createScope } from "./actions/create-scope";
@@ -59,7 +60,7 @@ export type DeploymentActionInput = Infer<typeof deploymentAction>;
 
 defineScope({
   name: "{{ .Slug }}",
-  version: "0.1.0",
+  version: pkg.version,
   description: "{{ .Name }} scope plugin",
   category: "{{ .Category }}",
   provider: "{{ .Provider }}",

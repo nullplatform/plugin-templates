@@ -1,5 +1,6 @@
 [tools]
 bun = "latest"
+oras = "latest"
 
 # Install runs on demand and is the root of the task dependency graph.
 # Every other task declares `depends = ["install"]` so a fresh clone
@@ -44,7 +45,7 @@ depends = ["install"]
 run = "bunx @nullplatform/plugin-dev-ui --plugin ."
 
 # `np plugin dev --agent` → this task. Starts `np-agent` locally and
-# points it at `./bin`, where a single shebang wrapper (bin/{{ .Slug }})
+# points it at `./bin`, where the entrypoint shebang wrapper
 # shells to `bun --hot src/index.ts`. Source edits hot-reload inside the
 # same bun process, and the plugin SDK's gRPC server is idempotent
 # across reloads — so np-agent's connection survives every save.
@@ -57,10 +58,26 @@ description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "np-agent --runtime host --plugin-dir ./bin --tags env:dev,plugin:{{ .Slug }}"
 
-# `np plugin publish` → this task. Shells to the plugin SDK's publish
-# entry point. The SDK owns everything: artifact upload, scope type
-# registration, action specs, notification channel, schema sync.
+# `np plugin publish` → this task. Three phases:
+#   1. build:all — cross-compile for all platforms (dependency)
+#   2. oras push — push the linux-x64 binary as an OCI artifact
+#   3. platform API sync — register scope type, action specs, notification channel
+#
+# Requires: oras CLI on $PATH, NP_PLUGIN_REGISTRY env var (or defaults to public ECR),
+# NP_API_KEY for platform sync. Auth to the OCI registry via `docker login`.
 [tasks.publish]
-description = "Publish the plugin (artifact + platform API sync)"
+description = "Build, push to OCI, and sync with platform"
 depends = ["build:all"]
-run = "bun src/index.ts --publish"
+run = """
+set -euo pipefail
+VERSION=$(bun -e "console.log(require('./package.json').version)")
+ARTIFACT="{{ .Registry }}/{{ .Slug }}:$VERSION"
+
+echo "Pushing $ARTIFACT"
+cp dist/{{ .Slug }}-linux-x64 dist/entrypoint
+cd dist && oras push "$ARTIFACT" entrypoint && cd ..
+rm dist/entrypoint
+
+echo "Syncing with platform API"
+bun src/index.ts --publish
+"""

@@ -26,6 +26,9 @@ categories:
       - name: Name
         prompt: Plugin name
         hint: "human-readable — e.g. 'Kubernetes K3D', 'AWS Lambda', 'ECS Fargate' (slug is auto-derived)"
+      - name: Registry
+        prompt: OCI plugin registry
+        hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
       - name: Category
         prompt: Category
         default: custom
@@ -42,6 +45,9 @@ categories:
       - name: Name
         prompt: Plugin name
         hint: "human-readable — e.g. 'DB Migrator', 'Slack Notifier', 'Secret Rotator' (slug is auto-derived)"
+      - name: Registry
+        prompt: OCI plugin registry
+        hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
 
   - type: service
     name: Application dependency
@@ -50,6 +56,9 @@ categories:
       - name: Name
         prompt: Plugin name
         hint: "human-readable — e.g. 'Postgres', 'Redis', 'Datadog', 'CloudFront CDN' (slug is auto-derived)"
+      - name: Registry
+        prompt: OCI plugin registry
+        hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
 
 sdks:
   - id: bun

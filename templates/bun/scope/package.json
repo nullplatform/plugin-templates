@@ -4,9 +4,9 @@
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@nullplatform/plugin": "^0.0.1",
-    "@nullplatform/workflow": "^0.0.1",
-    "@nullplatform/workflow-engine-in-memory": "^0.0.1"
+    "@nullplatform/plugin": "^0.0.3",
+    "@nullplatform/workflow": "^0.0.4",
+    "@nullplatform/workflow-engine-in-memory": "^0.0.4"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0"

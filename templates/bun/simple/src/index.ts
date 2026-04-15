@@ -1,6 +1,7 @@
+import pkg from "../package.json";
 import { createPlugin, registerManifest } from "@nullplatform/plugin";
 
-registerManifest({ name: "{{ .Slug }}", version: "0.1.0", command_types: ["custom"] });
+registerManifest({ name: "{{ .Slug }}", version: pkg.version, command_types: ["custom"] });
 
 createPlugin({
   async execute(req) {

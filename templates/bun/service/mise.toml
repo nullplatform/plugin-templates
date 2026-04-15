@@ -1,5 +1,6 @@
 [tools]
 bun = "latest"
+oras = "latest"
 
 [tasks.install]
 description = "Install dependencies"
@@ -42,7 +43,7 @@ depends = ["install"]
 run = "bun --hot src/index.ts"
 
 # `np plugin dev --agent` → this task. Starts `np-agent` locally and
-# points it at `./bin`, where a single shebang wrapper (bin/{{ .Slug }})
+# points it at `./bin`, where the entrypoint shebang wrapper
 # shells to `bun --hot src/index.ts`. Source edits hot-reload inside the
 # same bun process, and the plugin SDK's gRPC server is idempotent
 # across reloads — so np-agent's connection survives every save.
@@ -55,15 +56,22 @@ description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "np-agent --runtime host --plugin-dir ./bin --tags env:dev,plugin:{{ .Slug }}"
 
-# `np plugin publish` → this task. Once defineService() exists in the SDK,
-# this will shell to its --publish entry point (same as scope plugins).
-# Until then, distribute the compiled binary from dist/ manually.
+# `np plugin publish` → this task. Pushes the compiled binary as an OCI artifact.
+# Once defineService() ships in the SDK, add `bun src/index.ts --publish` for
+# platform API sync (same as scope plugins).
+#
+# Requires: oras CLI on $PATH, NP_PLUGIN_REGISTRY env var (or defaults to public ECR).
+# Auth to the OCI registry via `docker login`.
 [tasks.publish]
-description = "Publish the plugin (artifact + platform API sync)"
+description = "Build and push to OCI"
 depends = ["build:all"]
 run = """
-echo "Publish is not yet wired for service plugins."
-echo "Scope plugins use: bun src/index.ts --publish"
-echo "Once defineService() ships, replace this with: bun src/index.ts --publish"
-exit 1
+set -euo pipefail
+VERSION=$(bun -e "console.log(require('./package.json').version)")
+ARTIFACT="{{ .Registry }}/{{ .Slug }}:$VERSION"
+
+echo "Pushing $ARTIFACT"
+cp dist/{{ .Slug }}-linux-x64 dist/entrypoint
+cd dist && oras push "$ARTIFACT" entrypoint && cd ..
+rm dist/entrypoint
 """
