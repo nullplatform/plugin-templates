@@ -1,11 +1,8 @@
-import { workflow } from "@nullplatform/workflow";
 import type { DeploymentActionInput } from "../index";
 import { buildContext } from "../context";
 
-export const startBlueGreen = workflow<DeploymentActionInput>("{{ .Slug }}:start-blue-green")
-  .task("build-context", ({ input }) => buildContext(input))
-  .task("deploy", async ({ result: ctx }) => {
-    // TODO: implement blue-green deployment
-    console.log(`Starting blue-green deployment ${ctx.deploymentId} for scope ${ctx.scopeId}`);
-    return { deployment_id: ctx.deploymentId };
-  });
+export const startBlueGreen = async (notification: DeploymentActionInput, _emit: (o: { stdout?: string }) => void) => {
+  const ctx = buildContext(notification);
+  console.log("start-blue-green: scope " + ctx.scopeId + " deployment " + ctx.deploymentId);
+  return { deployment_id: ctx.deploymentId };
+};

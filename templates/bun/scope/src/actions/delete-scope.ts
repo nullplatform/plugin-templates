@@ -1,10 +1,8 @@
-import { workflow } from "@nullplatform/workflow";
 import type { ScopeActionInput } from "../index";
 import { buildContext } from "../context";
 
-export const deleteScope = workflow<ScopeActionInput>("{{ .Slug }}:delete-scope")
-  .task("build-context", ({ input }) => buildContext(input))
-  .task("delete", async ({ result: ctx }) => {
-    // TODO: implement scope deletion
-    console.log(`Deleting scope ${ctx.scopeId}`);
-  });
+export const deleteScope = async (notification: ScopeActionInput, _emit: (o: { stdout?: string }) => void) => {
+  const ctx = buildContext(notification);
+  console.log(`Deleting scope ${ctx.scopeId}`);
+  return {};
+};

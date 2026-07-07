@@ -1,10 +1,8 @@
-import { workflow } from "@nullplatform/workflow";
-import type { ScopeActionInput } from "../index";
+import type { DeploymentActionInput } from "../index";
 import { buildContext } from "../context";
 
-export const rollbackDeployment = workflow<ScopeActionInput>("{{ .Slug }}:rollback-deployment")
-  .task("build-context", ({ input }) => buildContext(input))
-  .task("rollback", async ({ result: ctx }) => {
-    // TODO: implement deployment rollback
-    console.log(`Rolling back deployment for scope ${ctx.scopeId}`);
-  });
+export const rollbackDeployment = async (notification: DeploymentActionInput, _emit: (o: { stdout?: string }) => void) => {
+  const ctx = buildContext(notification);
+  console.log("rollback-deployment: scope " + ctx.scopeId + " deployment " + ctx.deploymentId);
+  return { deployment_id: ctx.deploymentId };
+};

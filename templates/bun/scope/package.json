@@ -9,12 +9,13 @@
     "test": "bun test",
     "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
     "describe": "bun src/index.ts --describe",
-    "publish": "bun src/index.ts --publish"
+    "publish:image": "bash scripts/publish-image.sh"
   },
   "dependencies": {
-    "@nullplatform/plugin": "^0.0.3",
+    "@nullplatform/plugin": "0.0.4-alpha.1",
     "@nullplatform/workflow": "^0.0.5",
-    "@nullplatform/workflow-engine-in-memory": "^0.0.5"
+    "@nullplatform/workflow-engine-in-memory": "^0.0.5",
+    "config": "^4.4.2"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0"

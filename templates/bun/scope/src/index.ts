@@ -6,8 +6,12 @@ import { deleteScope } from "./actions/delete-scope";
 import { startInitial } from "./actions/start-initial";
 import { startBlueGreen } from "./actions/start-blue-green";
 import { switchTraffic } from "./actions/switch-traffic";
-import { finalizeDeployment } from "./actions/finalize-deployment";
+import { finalizeBlueGreen } from "./actions/finalize-blue-green";
 import { rollbackDeployment } from "./actions/rollback-deployment";
+import { deleteDeployment } from "./actions/delete-deployment";
+import { diagnoseScope } from "./actions/diagnose-scope";
+import { diagnoseDeployment } from "./actions/diagnose-deployment";
+import { sayHello } from "./actions/say-hello";
 
 // --- Scope schema ---
 // Properties that users configure when creating a scope.
@@ -65,6 +69,14 @@ defineScope({
   category: "{{ .Category }}",
   provider: "{{ .Provider }}",
 
+  // How the platform routes actions to your worker. Optional — defaults to
+  // selector { package: "{{ .Slug }}" } and entrypoint
+  // /app/packages/{{ .Slug }}/entrypoint. Uncomment to override:
+  // agent: {
+  //   selector: { package: "{{ .Slug }}" },
+  //   entrypoint: "/app/packages/{{ .Slug }}/entrypoint",
+  // },
+
   schema: scopeSchema,
 
   uiSchema: {
@@ -101,15 +113,40 @@ defineScope({
       output: { type: "object" },
       handler: switchTraffic,
     },
-    "finalize-deployment": {
-      input: scopeAction,
+    "finalize-blue-green": {
+      input: deploymentAction,
       output: { type: "object" },
-      handler: finalizeDeployment,
+      handler: finalizeBlueGreen,
     },
     "rollback-deployment": {
-      input: scopeAction,
+      input: deploymentAction,
       output: { type: "object" },
       handler: rollbackDeployment,
+    },
+    "delete-deployment": {
+      input: deploymentAction,
+      output: { type: "object" },
+      handler: deleteDeployment,
+    },
+    "diagnose-scope": {
+      input: scopeAction,
+      output: { type: "object", properties: { healthy: { type: "boolean" } } },
+      handler: diagnoseScope,
+    },
+    "diagnose-deployment": {
+      input: deploymentAction,
+      output: { type: "object", properties: { healthy: { type: "boolean" } } },
+      handler: diagnoseDeployment,
+    },
+
+    // A CUSTOM action — any slug you like. The SDK has no defaults for it, so
+    // declare name/type here (type "custom" runs as a normal scope action).
+    "say-hello": {
+      name: "Say Hello",
+      type: "custom",
+      input: scopeAction,
+      output: { type: "object", properties: { message: { type: "string" } } },
+      handler: sayHello,
     },
   },
 });

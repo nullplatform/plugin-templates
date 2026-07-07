@@ -58,26 +58,38 @@ description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "bun run dev:agent"
 
-# `np plugin publish` → this task. Three phases:
-#   1. build:all — cross-compile for all platforms (dependency)
-#   2. oras push — push the linux-x64 binary as an OCI artifact
-#   3. platform API sync — register scope type, action specs, notification channel
-#
-# Requires: oras CLI on $PATH, NP_PLUGIN_REGISTRY env var (or defaults to public ECR),
-# NP_API_KEY for platform sync. Auth to the OCI registry via `docker login`.
-[tasks.publish]
-description = "Build, push to OCI, and sync with platform"
-depends = ["build:all"]
+# `np package run` → this task (when the template defines it): build the worker
+# image and run it as a REAL local agent (docker, runtime=host). The np CLI
+# passes NP_API_KEY / NP_LOCAL_USER / NP_LOG_LEVEL in the environment; this task
+# owns everything else. No CLI-side docker logic — the template runs itself.
+[tasks."build:image"]
+description = "Build the worker container image (agent + this package)"
+depends = ["install"]
 run = """
 set -euo pipefail
-VERSION=$(bun -e "console.log(require('./package.json').version)")
-ARTIFACT="{{ .Registry }}/{{ .Slug }}:$VERSION"
-
-echo "Pushing $ARTIFACT"
-cp dist/{{ .Slug }}-linux-x64 dist/entrypoint
-cd dist && oras push "$ARTIFACT" entrypoint && cd ..
-rm dist/entrypoint
-
-echo "Syncing with platform API"
-bun run publish
+arch=$(uname -m)
+if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then target=bun-linux-arm64-musl; else target=bun-linux-x64-musl; fi
+bun build --compile --target=$target ./src/index.ts --outfile dist/{{ .Slug }}-worker
+docker build -t {{ .Slug }}-worker:dev .
 """
+
+[tasks.run]
+description = "Run the worker image as a local agent (docker, no cluster)"
+depends = ["build:image"]
+run = """
+set -euo pipefail
+docker rm -f np-{{ .Slug }}-worker >/dev/null 2>&1 || true
+docker run --rm --name np-{{ .Slug }}-worker \
+  -e NP_API_KEY -e NP_LOG_LEVEL="${NP_LOG_LEVEL:-INFO}" \
+  {{ .Slug }}-worker:dev \
+  -runtime=host \
+  -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}" \
+  -command-executor-command-folders=/app/packages/{{ .Slug }}
+"""
+
+# `np package publish` runs this (when --image is omitted): build the worker
+# image, push it, and print registry/repo@sha256:<digest> on stdout for the CLI
+# to register. Logs → stderr. Registry: $NP_PUSH_REGISTRY, else ttl.sh.
+[tasks."publish:image"]
+description = "Build + push the worker image; prints its digest ref"
+run = "bash scripts/publish-image.sh"
