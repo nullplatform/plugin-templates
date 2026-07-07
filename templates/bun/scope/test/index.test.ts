@@ -22,7 +22,7 @@ describe("{{ .Name }} plugin", () => {
     expect(manifest.actions["start-initial"]).toBeDefined();
     expect(manifest.actions["start-blue-green"]).toBeDefined();
     expect(manifest.actions["switch-traffic"]).toBeDefined();
-    expect(manifest.actions["finalize-deployment"]).toBeDefined();
+    expect(manifest.actions["finalize-blue-green"]).toBeDefined();
     expect(manifest.actions["rollback-deployment"]).toBeDefined();
   });
 
