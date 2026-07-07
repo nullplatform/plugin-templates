@@ -1,4 +1,4 @@
-import { describe, test, expect } from "@nullplatform/plugin-sdk/testing";
+import { describe, test, expect } from "@nullplatform/plugin/testing";
 import { resolve } from "path";
 
 describe("{{ .Name }} plugin", () => {
