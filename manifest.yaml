@@ -1,6 +1,6 @@
 version: 1
 
-# Templates registry for `np plugin init`.
+# Templates registry for `np package init`.
 #
 # Model: plugins have TWO orthogonal dimensions.
 #
@@ -86,10 +86,10 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "np plugin test            # run tests"
-      - "np plugin dev             # local dev with UI"
-      - "np plugin dev --agent     # local dev with np-agent attached"
-      - "np plugin publish         # build + push to OCI + sync with platform"
+      - "np package test            # run tests"
+      - "np package dev             # local dev with UI"
+      - "np package dev --agent     # local dev with np-agent attached"
+      - "np package publish         # build + push to OCI + sync with platform"
 
   - id: bun-simple
     path: bun/simple
@@ -100,10 +100,10 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "np plugin test            # run tests"
-      - "np plugin dev             # local dev with hot reload"
-      - "np plugin dev --agent     # local dev with np-agent attached"
-      - "np plugin publish         # build + push to OCI"
+      - "np package test            # run tests"
+      - "np package dev             # local dev with hot reload"
+      - "np package dev --agent     # local dev with np-agent attached"
+      - "np package publish         # build + push to OCI"
 
   - id: bun-service
     path: bun/service
@@ -114,7 +114,7 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "np plugin test            # run tests"
-      - "np plugin dev             # local dev with hot reload"
-      - "np plugin dev --agent     # local dev with np-agent attached"
-      - "np plugin publish         # build + push to OCI"
+      - "np package test            # run tests"
+      - "np package dev             # local dev with hot reload"
+      - "np package dev --agent     # local dev with np-agent attached"
+      - "np package publish         # build + push to OCI"
