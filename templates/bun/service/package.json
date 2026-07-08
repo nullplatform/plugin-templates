@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "bun --hot src/index.ts",
-    "dev:agent": "np-agent --runtime host --plugin-dir ./bin --tags env:dev,plugin:{{ .Slug }}",
+    "dev:agent": "np-agent --runtime host --plugin-dir ./bin --tags env:dev,package:{{ .Slug }}",
     "test": "bun test",
     "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
     "describe": "bun src/index.ts --describe"
