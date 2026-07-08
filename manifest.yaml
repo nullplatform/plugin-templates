@@ -77,7 +77,7 @@ sdks:
   #   description: Python 3.11+. Best for ML/data workflows and teams with deep Python expertise.
 
 templates:
-  - id: bun-scope
+  - id: scope-bun
     path: bun/scope
     type: scope
     sdk: bun
@@ -91,7 +91,7 @@ templates:
       - "np package dev --agent     # local dev with np-agent attached"
       - "np package publish         # build + push to OCI + sync with platform"
 
-  - id: bun-simple
+  - id: simple-bun
     path: bun/simple
     type: simple
     sdk: bun
@@ -105,7 +105,7 @@ templates:
       - "np package dev --agent     # local dev with np-agent attached"
       - "np package publish         # build + push to OCI"
 
-  - id: bun-service
+  - id: service-bun
     path: bun/service
     type: service
     sdk: bun
