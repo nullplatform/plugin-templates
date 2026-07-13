@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@nullplatform/plugin": "0.0.4-alpha.2",
+    "@nullplatform/workflow": "^0.0.5",
+    "@nullplatform/workflow-engine-in-memory": "^0.0.5",
     "@kubernetes/client-node": "^0.22.3",
     "config": "^4.4.2"
   },

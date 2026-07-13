@@ -61,6 +61,9 @@ categories:
         hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
 
 sdks:
+  - id: k8s-bun
+    name: Bun + Kubernetes
+    description: TypeScript/Bun scope that deploys to Kubernetes via @kubernetes/client-node.
   - id: bun
     name: Bun
     description: TypeScript with zero-config and first-class bundling. Fast dev iteration, single-file compiled binary via `bun build --compile` for production.
@@ -122,7 +125,7 @@ templates:
   - id: k8s-bun
     path: bun/k8s-scope
     type: scope
-    sdk: bun
+    sdk: k8s-bun
     post_init:
       - "bun install"
     next_steps:
