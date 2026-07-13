@@ -118,3 +118,15 @@ templates:
       - "np package dev             # local dev with hot reload"
       - "np package dev --agent     # local dev with np-agent attached"
       - "np package publish         # build + push to OCI"
+
+  - id: k8s-bun
+    path: bun/k8s-scope
+    type: scope
+    sdk: bun
+    post_init:
+      - "bun install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "# src/index.ts deploys a namespace + Deployment via @kubernetes/client-node"
+      - "np package test            # run tests"
+      - "np package publish         # build + push to OCI"

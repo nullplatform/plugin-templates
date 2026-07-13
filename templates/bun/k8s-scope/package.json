@@ -1,0 +1,20 @@
+{
+  "name": "@nullplatform/scope-{{ .Slug }}",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
+    "describe": "bun src/index.ts --describe"
+  },
+  "dependencies": {
+    "@nullplatform/plugin": "0.0.4-alpha.2",
+    "@kubernetes/client-node": "^0.22.3",
+    "config": "^4.4.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0"
+  },
+  "trustedDependencies": ["@grpc/grpc-js"]
+}
