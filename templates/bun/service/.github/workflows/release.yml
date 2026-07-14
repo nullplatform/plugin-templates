@@ -1,12 +1,16 @@
 name: release
 
 # Publish this scope package to nullplatform when you cut a GitHub Release.
-# `np package publish` builds + pushes the lean worker image (mise `publish:image`)
-# and registers the scope type, actions, channel, and the package revision.
+# `np package publish` builds + pushes the lean worker image tagged with the
+# release version (mise `publish:image`) and registers the scope type, actions,
+# channel, and the package revision pinning that image.
 #
-# Configure once (Settings → Secrets and variables → Actions):
-#   Secrets:   NULLPLATFORM_API_KEY, REGISTRY_USERNAME, REGISTRY_PASSWORD
-#   Variables: NP_PUSH_REGISTRY (e.g. ghcr.io/acme/myscope), NP_NRN
+# Works out of the box: the image goes to this repo's GitHub Container Registry
+# (ghcr.io/<owner>/<repo>) using the built-in GITHUB_TOKEN — no extra secrets.
+# To push elsewhere, set the NP_PUSH_REGISTRY variable and REGISTRY_USERNAME /
+# REGISTRY_PASSWORD secrets.
+#
+# Configure: secret NULLPLATFORM_API_KEY, variable NP_NRN.
 
 on:
   release:
@@ -15,10 +19,11 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 env:
   NP_API_KEY: ${{ secrets.NULLPLATFORM_API_KEY }}
-  NP_PUSH_REGISTRY: ${{ vars.NP_PUSH_REGISTRY }}
+  NP_PUSH_REGISTRY: ${{ vars.NP_PUSH_REGISTRY || format('ghcr.io/{0}', github.repository) }}
 
 jobs:
   publish:
@@ -35,7 +40,12 @@ jobs:
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-        run: echo "$REGISTRY_PASSWORD" | docker login "${NP_PUSH_REGISTRY%%/*}" -u "$REGISTRY_USERNAME" --password-stdin
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          user="${REGISTRY_USERNAME:-$GHCR_USER}"
+          pass="${REGISTRY_PASSWORD:-$GHCR_TOKEN}"
+          echo "$pass" | docker login "${NP_PUSH_REGISTRY%%/*}" -u "$user" --password-stdin
       # The release tag is the version: the worker image is pushed as
       # registry/repo:<version> and the package revision is pinned to it.
       - name: Publish package
