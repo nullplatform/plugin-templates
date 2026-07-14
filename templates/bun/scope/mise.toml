@@ -58,12 +58,11 @@ description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "bun run dev:agent"
 
-# `np package run` → this task (when the template defines it): build the worker
-# image and run it as a REAL local agent (docker, runtime=host). The np CLI
-# passes NP_API_KEY / NP_LOCAL_USER / NP_LOG_LEVEL in the environment; this task
-# owns everything else. No CLI-side docker logic — the template runs itself.
+# Build the LEAN gRPC worker image (the image the agent spawns and dials over
+# gRPC/mTLS). Just the compiled package binary on a minimal base — the agent
+# injects the port + TLS + API key at runtime.
 [tasks."build:image"]
-description = "Build the worker container image (agent + this package)"
+description = "Build the lean gRPC worker image"
 depends = ["install"]
 run = """
 set -euo pipefail
@@ -73,23 +72,31 @@ bun build --compile --target=$target ./src/index.ts --outfile dist/{{ .Slug }}-w
 docker build -t {{ .Slug }}-worker:dev .
 """
 
+# `np package run` → run this package locally the way production does: a
+# controlplane-agent with the worker orchestrator (docker backend) that SPAWNS
+# the lean worker container and talks to it over gRPC/mTLS. Needs NP_API_KEY.
+# --network host so the agent can reach the worker it publishes on the host
+# (Linux; on Docker Desktop enable host networking). Override the agent image
+# with NP_AGENT_IMAGE until the orchestrator agent is the default tag.
 [tasks.run]
-description = "Run the worker image as a local agent (docker, no cluster)"
+description = "Run locally: an agent (docker backend) that spawns the lean worker"
 depends = ["build:image"]
 run = """
 set -euo pipefail
-docker rm -f np-{{ .Slug }}-worker >/dev/null 2>&1 || true
-docker run --rm --name np-{{ .Slug }}-worker \
+: "${NP_API_KEY:?set NP_API_KEY}"
+docker rm -f np-{{ .Slug }}-agent >/dev/null 2>&1 || true
+docker run --rm --name np-{{ .Slug }}-agent --network host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -e NP_API_KEY -e NP_LOG_LEVEL="${NP_LOG_LEVEL:-INFO}" \
-  {{ .Slug }}-worker:dev \
-  -runtime=host \
-  -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}" \
-  -command-executor-command-folders=/app/packages/{{ .Slug }}
+  -e NP_WORKER_BACKEND=docker \
+  -e NP_WORKER_IMAGE={{ .Slug }}-worker:dev \
+  "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:latest}" \
+  -runtime=host -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}"
 """
 
-# `np package publish` runs this (when --image is omitted): build the worker
-# image, push it, and print registry/repo@sha256:<digest> on stdout for the CLI
-# to register. Logs → stderr. Registry: $NP_PUSH_REGISTRY, else ttl.sh.
+# `np package publish` runs this (when --image is omitted): build the lean worker
+# image, push it to $NP_PUSH_REGISTRY (any registry you're `docker login`ed to),
+# and print registry/repo@sha256:<digest> on stdout for the CLI to register.
 [tasks."publish:image"]
-description = "Build + push the worker image; prints its digest ref"
+description = "Build + push the lean worker image; prints its digest ref"
 run = "bash scripts/publish-image.sh"

@@ -58,22 +58,45 @@ description = "Run the plugin in dev mode with np-agent attached"
 depends = ["install"]
 run = "bun run dev:agent"
 
-# `np plugin publish` → this task. Pushes the compiled binary as an OCI artifact.
-# Once defineService() ships in the SDK, add `bun run publish` for
-# platform API sync (same as scope plugins).
-#
-# Requires: oras CLI on $PATH, NP_PLUGIN_REGISTRY env var (or defaults to public ECR).
-# Auth to the OCI registry via `docker login`.
-[tasks.publish]
-description = "Build and push to OCI"
-depends = ["build:all"]
+# Build the LEAN gRPC worker image (the image the agent spawns and dials over
+# gRPC/mTLS). Just the compiled package binary on a minimal base — the agent
+# injects the port + TLS + API key at runtime.
+[tasks."build:image"]
+description = "Build the lean gRPC worker image"
+depends = ["install"]
 run = """
 set -euo pipefail
-VERSION=$(bun -e "console.log(require('./package.json').version)")
-ARTIFACT="{{ .Registry }}/{{ .Slug }}:$VERSION"
-
-echo "Pushing $ARTIFACT"
-cp dist/{{ .Slug }}-linux-x64 dist/entrypoint
-cd dist && oras push "$ARTIFACT" entrypoint && cd ..
-rm dist/entrypoint
+arch=$(uname -m)
+if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then target=bun-linux-arm64-musl; else target=bun-linux-x64-musl; fi
+bun build --compile --target=$target ./src/index.ts --outfile dist/{{ .Slug }}-worker
+docker build -t {{ .Slug }}-worker:dev .
 """
+
+# `np package run` → run this package locally the way production does: a
+# controlplane-agent with the worker orchestrator (docker backend) that SPAWNS
+# the lean worker container and talks to it over gRPC/mTLS. Needs NP_API_KEY.
+# --network host so the agent can reach the worker it publishes on the host
+# (Linux; on Docker Desktop enable host networking). Override the agent image
+# with NP_AGENT_IMAGE until the orchestrator agent is the default tag.
+[tasks.run]
+description = "Run locally: an agent (docker backend) that spawns the lean worker"
+depends = ["build:image"]
+run = """
+set -euo pipefail
+: "${NP_API_KEY:?set NP_API_KEY}"
+docker rm -f np-{{ .Slug }}-agent >/dev/null 2>&1 || true
+docker run --rm --name np-{{ .Slug }}-agent --network host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e NP_API_KEY -e NP_LOG_LEVEL="${NP_LOG_LEVEL:-INFO}" \
+  -e NP_WORKER_BACKEND=docker \
+  -e NP_WORKER_IMAGE={{ .Slug }}-worker:dev \
+  "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:latest}" \
+  -runtime=host -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}"
+"""
+
+# `np package publish` runs this (when --image is omitted): build the lean worker
+# image, push it to $NP_PUSH_REGISTRY (any registry you're `docker login`ed to),
+# and print registry/repo@sha256:<digest> on stdout for the CLI to register.
+[tasks."publish:image"]
+description = "Build + push the lean worker image; prints its digest ref"
+run = "bash scripts/publish-image.sh"

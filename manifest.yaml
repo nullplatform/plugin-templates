@@ -2,21 +2,16 @@ version: 1
 
 # Templates registry for `np package init`.
 #
-# Model: plugins have TWO orthogonal dimensions.
+# Two orthogonal dimensions:
+#   1. CATEGORY — what the plugin is (the problem it solves). First picker step.
+#   2. SDK      — how it's implemented (runtime/language). Second picker step.
 #
-#   1. CATEGORY — what the plugin is (the problem it solves).
-#      Defined once in `categories`. Drives the first picker step.
+# `templates` is the sparse (category, sdk) matrix pointing at templates/<path>.
 #
-#   2. SDK — how the plugin is implemented (runtime, language, framework).
-#      Defined once in `sdks`. Drives the second picker step.
-#
-# `templates` is the sparse matrix: each entry is a (category, sdk) pair
-# pointing at a filesystem directory in `templates/<path>`. A template
-# exists only for combinations we actually support.
-#
-# Display metadata (names, descriptions) lives on categories and sdks —
-# NOT on individual templates — so the pickers stay clean and the same
-# category reads identically whether you pick Bun or Go or Terraform.
+# Prompts (category `variables`) ask ONLY for what the scaffold can't derive:
+# the human name (the slug is auto-derived from it). Everything else — scope
+# category/provider, agent routing — is declared in code via the SDK
+# (defineScope/defineService), the single source of truth, and changed there.
 
 categories:
   - type: scope
@@ -26,17 +21,6 @@ categories:
       - name: Name
         prompt: Plugin name
         hint: "human-readable — e.g. 'Kubernetes K3D', 'AWS Lambda', 'ECS Fargate' (slug is auto-derived)"
-      - name: Registry
-        prompt: OCI plugin registry
-        hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
-      - name: Category
-        prompt: Category
-        default: custom
-        hint: "how the platform UI groups this — e.g. container, serverless, vm, function, or 'custom'"
-      - name: Provider
-        prompt: Provider
-        default: custom
-        hint: "the underlying infra provider — e.g. aws, gcp, azure, kubernetes, on-prem, or 'custom'"
 
   - type: simple
     name: Custom command handler
@@ -45,9 +29,6 @@ categories:
       - name: Name
         prompt: Plugin name
         hint: "human-readable — e.g. 'DB Migrator', 'Slack Notifier', 'Secret Rotator' (slug is auto-derived)"
-      - name: Registry
-        prompt: OCI plugin registry
-        hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
 
   - type: service
     name: Application dependency
@@ -56,28 +37,11 @@ categories:
       - name: Name
         prompt: Plugin name
         hint: "human-readable — e.g. 'Postgres', 'Redis', 'Datadog', 'CloudFront CDN' (slug is auto-derived)"
-      - name: Registry
-        prompt: OCI plugin registry
-        hint: "where plugin artifacts are published — e.g. public.ecr.aws/myorg/plugins, ghcr.io/myorg/plugins"
 
 sdks:
-  - id: k8s-bun
-    name: Bun + Kubernetes
-    description: TypeScript/Bun scope that deploys to Kubernetes via @kubernetes/client-node.
   - id: bun
     name: Bun
     description: TypeScript with zero-config and first-class bundling. Fast dev iteration, single-file compiled binary via `bun build --compile` for production.
-
-  # Future SDKs (not yet shipped):
-  # - id: terraform
-  #   name: Terraform / OpenTofu
-  #   description: Declarative IaC. Best when the plugin wires up cloud resources via existing Terraform providers (AWS, GCP, Azure, Kubernetes, …).
-  # - id: go
-  #   name: Go
-  #   description: Native Go. Best for system integrations, heavy concurrency, or reusing the nullplatform Go SDKs directly.
-  # - id: python
-  #   name: Python
-  #   description: Python 3.11+. Best for ML/data workflows and teams with deep Python expertise.
 
 templates:
   - id: scope-bun
@@ -92,7 +56,7 @@ templates:
       - "np package test            # run tests"
       - "np package dev             # local dev with UI"
       - "np package dev --agent     # local dev with np-agent attached"
-      - "np package publish         # build + push to OCI + sync with platform"
+      - "np package publish         # build + push the worker image + sync with the platform"
 
   - id: simple-bun
     path: bun/simple
@@ -106,7 +70,7 @@ templates:
       - "np package test            # run tests"
       - "np package dev             # local dev with hot reload"
       - "np package dev --agent     # local dev with np-agent attached"
-      - "np package publish         # build + push to OCI"
+      - "np package publish         # build + push the worker image"
 
   - id: service-bun
     path: bun/service
@@ -120,16 +84,4 @@ templates:
       - "np package test            # run tests"
       - "np package dev             # local dev with hot reload"
       - "np package dev --agent     # local dev with np-agent attached"
-      - "np package publish         # build + push to OCI"
-
-  - id: k8s-bun
-    path: bun/k8s-scope
-    type: scope
-    sdk: k8s-bun
-    post_init:
-      - "bun install"
-    next_steps:
-      - "cd {{ .Slug }}"
-      - "# src/index.ts deploys a namespace + Deployment via @kubernetes/client-node"
-      - "np package test            # run tests"
-      - "np package publish         # build + push to OCI"
+      - "np package publish         # build + push the worker image"

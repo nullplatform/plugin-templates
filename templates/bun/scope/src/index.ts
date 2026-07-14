@@ -66,8 +66,11 @@ defineScope({
   name: "{{ .Slug }}",
   version: pkg.version,
   description: "{{ .Name }} scope plugin",
-  category: "{{ .Category }}",
-  provider: "{{ .Provider }}",
+  // How the platform UI groups this scope type and the infra it targets.
+  // Defaults to "custom"; change them here if your scope maps to a known
+  // category/provider (e.g. "serverless" / "aws").
+  category: "custom",
+  provider: "custom",
 
   // How the platform routes actions to your worker. Optional — defaults to
   // selector { package: "{{ .Slug }}" } and entrypoint

@@ -8,7 +8,8 @@
     "dev:agent": "np-agent --runtime host --plugin-dir ./bin --tags env:dev,package:{{ .Slug }}",
     "test": "bun test",
     "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
-    "describe": "bun src/index.ts --describe"
+    "describe": "bun src/index.ts --describe",
+    "publish:image": "bash scripts/publish-image.sh"
   },
   "dependencies": {
     "@nullplatform/plugin": "0.0.4-alpha.2",
@@ -19,5 +20,7 @@
   "devDependencies": {
     "@types/bun": "^1.2.0"
   },
-  "trustedDependencies": ["@grpc/grpc-js"]
+  "trustedDependencies": [
+    "@grpc/grpc-js"
+  ]
 }
