@@ -67,8 +67,8 @@ depends = ["install"]
 run = """
 set -eu
 arch=$(uname -m)
-if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then target=bun-linux-arm64-musl; else target=bun-linux-x64-musl; fi
-bun build --compile --target=$target ./src/index.ts --outfile dist/{{ .Slug }}-worker
+if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then bt=bun-linux-arm64-musl; da=arm64; else bt=bun-linux-x64-musl; da=amd64; fi
+bun build --compile --target=$bt ./src/index.ts --outfile dist/{{ .Slug }}-worker-$da
 docker build -t {{ .Slug }}-worker:dev .
 """
 

@@ -32,6 +32,9 @@ jobs:
       - uses: actions/checkout@v4
       # mise provides bun/oras and runs the package's own tasks.
       - uses: jdx/mise-action@v2
+      # buildx + QEMU so publish:image can build the multi-arch (amd64+arm64) worker.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
       - name: Install np CLI
         run: |
           curl https://cli.nullplatform.com/install.sh | sh

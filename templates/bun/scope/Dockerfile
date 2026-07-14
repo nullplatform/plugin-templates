@@ -7,14 +7,17 @@
 # the mTLS material (NP_WORKER_TLS_*), and NP_API_KEY. Do NOT set NP_MODE=dev —
 # that switches the SDK to the in-memory client and the worker would never report
 # action lifecycle to the platform (scopes would hang/fail).
+#
+# Multi-arch: buildkit sets TARGETARCH (amd64|arm64); the publish task cross-
+# compiles one binary per arch (dist/<slug>-worker-<arch>) so the image runs on
+# both x86 and ARM nodes.
 FROM alpine:3.20
 
 # The bun musl binary links libstdc++/libgcc dynamically.
 RUN apk add --no-cache libstdc++ libgcc
 
-# The compiled package binary for this image's architecture (np package build
-# --image compiles it for the target platform).
-COPY dist/{{ .Slug }}-worker /app/worker
+ARG TARGETARCH
+COPY dist/{{ .Slug }}-worker-${TARGETARCH} /app/worker
 RUN chmod +x /app/worker
 
 # node-config: ship the config dir; custom-environment-variables.json maps env
