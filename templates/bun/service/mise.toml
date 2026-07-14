@@ -65,7 +65,7 @@ run = "bun run dev:agent"
 description = "Build the lean gRPC worker image"
 depends = ["install"]
 run = """
-set -euo pipefail
+set -eu
 arch=$(uname -m)
 if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then target=bun-linux-arm64-musl; else target=bun-linux-x64-musl; fi
 bun build --compile --target=$target ./src/index.ts --outfile dist/{{ .Slug }}-worker
@@ -82,7 +82,7 @@ docker build -t {{ .Slug }}-worker:dev .
 description = "Run locally: an agent (docker backend) that spawns the lean worker"
 depends = ["build:image"]
 run = """
-set -euo pipefail
+set -eu
 : "${NP_API_KEY:?set NP_API_KEY}"
 docker rm -f np-{{ .Slug }}-agent >/dev/null 2>&1 || true
 docker run --rm --name np-{{ .Slug }}-agent --network host \

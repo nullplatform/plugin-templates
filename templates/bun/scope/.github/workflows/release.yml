@@ -1,43 +1,44 @@
 name: release
 
-# Publish this package to nullplatform when you cut a GitHub Release (or push a
-# tag and publish it). This builds + pushes the lean worker image and registers
-# the package version — the same `np package publish` you run locally.
+# Publish this scope package to nullplatform when you cut a GitHub Release.
+# `np package publish` builds + pushes the lean worker image (mise `publish:image`)
+# and registers the scope type, actions, channel, and the package revision.
 #
-# Configure once in the repo (Settings → Secrets and variables → Actions):
-#   Secrets:   NP_API_KEY, REGISTRY_USERNAME, REGISTRY_PASSWORD
+# Configure once (Settings → Secrets and variables → Actions):
+#   Secrets:   NULLPLATFORM_API_KEY, REGISTRY_USERNAME, REGISTRY_PASSWORD
 #   Variables: NP_PUSH_REGISTRY (e.g. ghcr.io/acme/myscope), NP_NRN
-#
-# Works with any registry you can `docker login` to (GHCR, ECR, Docker Hub, …).
 
 on:
   release:
     types: [published]
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
+env:
+  NP_API_KEY: ${{ secrets.NULLPLATFORM_API_KEY }}
+  NP_PUSH_REGISTRY: ${{ vars.NP_PUSH_REGISTRY }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # bun (and any other tools) come from mise.toml.
+      # mise provides bun/oras and runs the package's own tasks.
       - uses: jdx/mise-action@v2
-
       - name: Install np CLI
         run: |
-          curl -fsSL https://cli.nullplatform.com/install.sh | bash
+          curl https://cli.nullplatform.com/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
       - name: Log in to the container registry
         env:
-          NP_PUSH_REGISTRY: ${{ vars.NP_PUSH_REGISTRY }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         run: echo "$REGISTRY_PASSWORD" | docker login "${NP_PUSH_REGISTRY%%/*}" -u "$REGISTRY_USERNAME" --password-stdin
-
+      # The release tag is the version: the worker image is pushed as
+      # registry/repo:<version> and the package revision is pinned to it.
       - name: Publish package
         env:
-          NP_API_KEY: ${{ secrets.NP_API_KEY }}
-          NP_PUSH_REGISTRY: ${{ vars.NP_PUSH_REGISTRY }}
-        run: np package publish --nrn "${{ vars.NP_NRN }}"
+          NP_VERSION: ${{ github.event.release.tag_name }}
+        run: np package publish --nrn "${{ vars.NP_NRN }}" --version "${NP_VERSION#v}"

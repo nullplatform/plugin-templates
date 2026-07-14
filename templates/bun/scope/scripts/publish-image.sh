@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# Build the lean gRPC worker image, push it, and print `registry/repo@sha256:<digest>`
-# on stdout for `np package publish` to register. All build/push logs go to stderr
-# so stdout is just the ref.
+# Build the lean gRPC worker image and push it as `registry/repo:<version>`, then
+# print `registry/repo@sha256:<digest>` on stdout for `np package publish` to
+# register (the immutable ref). Build/push logs go to stderr.
 #
-# Registry: set NP_PUSH_REGISTRY to the repo you want to push to, e.g.
-#   ghcr.io/acme/myscope | 123456789.dkr.ecr.us-east-1.amazonaws.com/myscope
-# You must be authenticated to it first (`docker login <registry>`). This works
-# with any registry — nothing here is provider-specific.
-set -euo pipefail
+# Version: $NP_VERSION (the release cuts this from the git tag), else the
+# package.json version. Registry: $NP_PUSH_REGISTRY (any registry you're
+# `docker login`ed to) — nothing provider-specific here.
+set -eu
 
 registry="${NP_PUSH_REGISTRY:-}"
 if [ -z "$registry" ]; then
@@ -15,10 +14,14 @@ if [ -z "$registry" ]; then
   exit 1
 fi
 
-# The slug is the worker binary the Dockerfile copies (dist/<slug>-worker), NOT
-# the npm package name — those differ (e.g. @nullplatform/scope-foo vs foo).
+# Version tag: NP_VERSION (release tag) → package.json version. Drop a leading "v".
+version="${NP_VERSION:-$(sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' package.json | head -1)}"
+version="${version#v}"
+version="${version:-0.0.0}"
+
+# The slug is the worker binary the Dockerfile bakes in (dist/<slug>-worker).
 slug=$(sed -nE 's|^COPY dist/(.+)-worker .*|\1|p' Dockerfile | head -1)
-tag="${registry}:$(date +%s)"
+tag="${registry}:${version}"
 
 {
   arch=$(uname -m)
@@ -28,8 +31,7 @@ tag="${registry}:$(date +%s)"
     target=bun-linux-x64-musl
   fi
   bun build --compile --target="$target" ./src/index.ts --outfile "dist/${slug}-worker"
-  docker build -t "${slug}-worker:dev" .
-  docker tag "${slug}-worker:dev" "$tag"
+  docker build -t "$tag" .
   docker push "$tag"
   digest=$(docker inspect --format '{{ index .RepoDigests 0 }}' "$tag" | cut -d@ -f2)
 } >&2
