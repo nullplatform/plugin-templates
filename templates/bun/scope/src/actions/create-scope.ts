@@ -1,11 +1,10 @@
-import { workflow } from "@nullplatform/workflow";
 import type { ScopeActionInput } from "../index";
 import { buildContext } from "../context";
 
-export const createScope = workflow<ScopeActionInput>("{{ .Slug }}:create-scope")
-  .task("build-context", ({ input }) => buildContext(input))
-  .task("create", async ({ result: ctx }) => {
-    // TODO: implement scope creation
-    console.log(`Creating scope ${ctx.scopeId}`);
-    return { message: `Scope ${ctx.scopeId} created` };
-  });
+// emit({ stdout }) shows up as a live message on the action in the UI.
+export const createScope = async (notification: ScopeActionInput, emit: (o: { stdout?: string }) => void) => {
+  const ctx = buildContext(notification);
+  emit({ stdout: `Creating scope ${ctx.scopeId}` });
+  // TODO: provision infrastructure here
+  return { message: `Scope ${ctx.scopeId} created` };
+};

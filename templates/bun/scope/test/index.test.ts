@@ -1,5 +1,6 @@
-import { describe, test, expect } from "@nullplatform/plugin-sdk/testing";
+import { describe, test, expect } from "@nullplatform/plugin/testing";
 import { resolve } from "path";
+import pkg from "../package.json";
 
 describe("{{ .Name }} plugin", () => {
   test("--describe outputs valid plugin manifest", async () => {
@@ -12,14 +13,16 @@ describe("{{ .Name }} plugin", () => {
     const manifest = JSON.parse(output);
 
     expect(manifest.name).toBe("{{ .Slug }}");
-    expect(manifest.version).toBe("0.1.0");
+    // src reads its version from package.json (`pkg.version`), so assert against
+    // that rather than a hard-coded string that drifts on every version bump.
+    expect(manifest.version).toBe(pkg.version);
     expect(manifest.schema.properties.enabled).toBeDefined();
     expect(manifest.actions["create-scope"]).toBeDefined();
     expect(manifest.actions["delete-scope"]).toBeDefined();
     expect(manifest.actions["start-initial"]).toBeDefined();
     expect(manifest.actions["start-blue-green"]).toBeDefined();
     expect(manifest.actions["switch-traffic"]).toBeDefined();
-    expect(manifest.actions["finalize-deployment"]).toBeDefined();
+    expect(manifest.actions["finalize-blue-green"]).toBeDefined();
     expect(manifest.actions["rollback-deployment"]).toBeDefined();
   });
 

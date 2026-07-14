@@ -5,18 +5,20 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "bunx @nullplatform/plugin-dev-ui --plugin .",
-    "dev:agent": "np-agent --runtime host --plugin-dir ./bin --tags env:dev,plugin:{{ .Slug }}",
+    "dev:agent": "np-agent --runtime host --plugin-dir ./bin --tags env:dev,package:{{ .Slug }}",
     "test": "bun test",
     "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
     "describe": "bun src/index.ts --describe",
-    "publish": "bun src/index.ts --publish"
+    "publish:image": "bash scripts/publish-image.sh"
   },
   "dependencies": {
-    "@nullplatform/plugin": "^0.0.3",
+    "@nullplatform/plugin": "0.0.4-alpha.3",
     "@nullplatform/workflow": "^0.0.5",
-    "@nullplatform/workflow-engine-in-memory": "^0.0.5"
+    "@nullplatform/workflow-engine-in-memory": "^0.0.5",
+    "config": "^4.4.2"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0"
-  }
+  },
+  "trustedDependencies": ["@grpc/grpc-js"]
 }
