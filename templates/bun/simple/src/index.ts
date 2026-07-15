@@ -1,7 +1,18 @@
 import pkg from "../package.json";
 import { createPlugin, registerManifest } from "@nullplatform/plugin";
 
-const manifest = { name: "{{ .Slug }}", version: pkg.version, command_types: ["custom"] };
+// The manifest declares identity + channel routing. `agent.sources` is what the
+// package's notification channel subscribes to — a custom command handler only
+// needs "service"; add "telemetry" only if you implement data-fetch actions.
+const manifest = {
+  name: "{{ .Slug }}",
+  version: pkg.version,
+  command_types: ["custom"],
+  agent: {
+    selector: { package: "{{ .Slug }}" },
+    sources: ["service"],
+  },
+};
 registerManifest(manifest);
 
 // `np package publish` runs the binary with --describe to read the manifest.

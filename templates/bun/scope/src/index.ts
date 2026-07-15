@@ -12,6 +12,8 @@ import { deleteDeployment } from "./actions/delete-deployment";
 import { diagnoseScope } from "./actions/diagnose-scope";
 import { diagnoseDeployment } from "./actions/diagnose-deployment";
 import { sayHello } from "./actions/say-hello";
+import { readLogs } from "./actions/log-read";
+import { listInstances } from "./actions/instance-data";
 
 // --- Scope schema ---
 // Properties that users configure when creating a scope.
@@ -151,5 +153,11 @@ defineScope({
       output: { type: "object", properties: { message: { type: "string" } } },
       handler: sayHello,
     },
+
+    // Telemetry — ephemeral data-fetch actions ("log:"/"instance:" prefixes).
+    // Declaring them adds "telemetry" to the package's channel sources (the SDK
+    // derives sources from actions; override via agent.sources if needed).
+    "log:read": { input: { type: "object" }, handler: readLogs },
+    "instance:data": { input: { type: "object" }, handler: listInstances },
   },
 });
