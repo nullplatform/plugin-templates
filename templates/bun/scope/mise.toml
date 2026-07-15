@@ -44,19 +44,6 @@ description = "Run the plugin with the dev UI"
 depends = ["install"]
 run = "bun run dev"
 
-# `np plugin dev --agent` → this task. Starts `np-agent` locally and
-# points it at `./bin`, where the entrypoint shebang wrapper
-# shells to `bun --hot src/index.ts`. Source edits hot-reload inside the
-# same bun process, and the plugin SDK's gRPC server is idempotent
-# across reloads — so np-agent's connection survives every save.
-#
-# Customize by swapping/extending the body: add docker deps via depends,
-# override tags or API key via shell env, whatever fits your plugin.
-# Requires `np-agent` on $PATH and NP_API_KEY in the environment.
-[tasks."dev:agent"]
-description = "Run the plugin in dev mode with np-agent attached"
-depends = ["install"]
-run = "bun run dev:agent"
 
 # Build the LEAN gRPC worker image (the image the agent spawns and dials over
 # gRPC/mTLS). Just the compiled package binary on a minimal base — the agent
