@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Build the lean gRPC worker image for amd64 + arm64 and push it as
-# `registry/repo:<version>`, then print `registry/repo@sha256:<digest>` on stdout
-# for `np package publish` to register (the immutable multi-arch index digest).
-# Build/push logs go to stderr.
+# Build + push the lean worker image for amd64 + arm64 from the multi-stage
+# Dockerfile (it compiles the worker inside), and print registry/repo@sha256:<digest>
+# on stdout for `np package publish` to register. Build logs go to stderr.
 #
-# Multi-arch so the worker runs on x86 and ARM nodes alike. Version: $NP_VERSION
-# (the release cuts this from the git tag) → package.json version. Registry:
-# $NP_PUSH_REGISTRY (any registry you're `docker login`ed to). Needs docker buildx.
+# Version: $NP_VERSION (the release tag, v-stripped). Registry: $NP_PUSH_REGISTRY
+# (any registry you're `docker login`ed to). Needs docker buildx.
 set -eu
 
 registry="${NP_PUSH_REGISTRY:-}"
@@ -19,17 +17,10 @@ version="${NP_VERSION:-$(sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)
 version="${version#v}"
 version="${version:-0.0.0}"
 
-# The slug is the worker binary the Dockerfile bakes in (dist/<slug>-worker-<arch>).
-slug=$(sed -nE 's|^COPY dist/(.+)-worker-.*|\1|p' Dockerfile | head -1)
 tag="${registry}:${version}"
 meta="$(mktemp)"
 
-{
-  # bun cross-compiles both arches from any host — no emulation needed to compile.
-  bun build --compile --target=bun-linux-x64-musl   ./src/index.ts --outfile "dist/${slug}-worker-amd64"
-  bun build --compile --target=bun-linux-arm64-musl ./src/index.ts --outfile "dist/${slug}-worker-arm64"
-  docker buildx build --platform linux/amd64,linux/arm64 -t "$tag" --push --metadata-file "$meta" .
-} >&2
+docker buildx build --platform linux/amd64,linux/arm64 -t "$tag" --push --metadata-file "$meta" . >&2
 
 digest=$(sed -nE 's/.*"containerimage.digest"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$meta" | head -1)
 if [ -z "$digest" ]; then

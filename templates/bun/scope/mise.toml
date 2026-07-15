@@ -63,14 +63,7 @@ run = "bun run dev:agent"
 # injects the port + TLS + API key at runtime.
 [tasks."build:image"]
 description = "Build the lean gRPC worker image"
-depends = ["install"]
-run = """
-set -eu
-arch=$(uname -m)
-if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then bt=bun-linux-arm64-musl; da=arm64; else bt=bun-linux-x64-musl; da=amd64; fi
-bun build --compile --target=$bt ./src/index.ts --outfile dist/{{ .Slug }}-worker-$da
-docker build -t {{ .Slug }}-worker:dev .
-"""
+run = "docker build -t {{ .Slug }}-worker:dev ."
 
 # `np package run` → run this package locally the way production does: a
 # controlplane-agent with the worker orchestrator (docker backend) that SPAWNS
