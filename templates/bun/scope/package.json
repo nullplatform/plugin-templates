@@ -12,7 +12,7 @@
     "publish:image": "bash scripts/publish-image.sh"
   },
   "dependencies": {
-    "@nullplatform/plugin": "0.0.4-alpha.3",
+    "@nullplatform/plugin": "0.0.4-alpha.4",
     "@nullplatform/workflow": "^0.0.5",
     "@nullplatform/workflow-engine-in-memory": "^0.0.5",
     "config": "^4.4.2"
@@ -20,5 +20,7 @@
   "devDependencies": {
     "@types/bun": "^1.2.0"
   },
-  "trustedDependencies": ["@grpc/grpc-js"]
+  "trustedDependencies": [
+    "@grpc/grpc-js"
+  ]
 }
