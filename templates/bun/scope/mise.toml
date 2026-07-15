@@ -83,7 +83,7 @@ docker run --rm --name np-{{ .Slug }}-agent --network host \
   -e NP_API_KEY -e NP_LOG_LEVEL="${NP_LOG_LEVEL:-INFO}" \
   -e NP_WORKER_BACKEND=docker \
   -e NP_WORKER_IMAGE={{ .Slug }}-worker:dev \
-  "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:latest}" \
+  "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:alpha-packages-2.2.0}" \
   -runtime=host -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}"
 """
 
