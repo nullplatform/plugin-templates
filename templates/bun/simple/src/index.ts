@@ -1,7 +1,16 @@
 import pkg from "../package.json";
 import { createPlugin, registerManifest } from "@nullplatform/plugin";
 
-registerManifest({ name: "{{ .Slug }}", version: pkg.version, command_types: ["custom"] });
+const manifest = { name: "{{ .Slug }}", version: pkg.version, command_types: ["custom"] };
+registerManifest(manifest);
+
+// `np package publish` runs the binary with --describe to read the manifest.
+// Raw createPlugin (unlike defineScope/defineService) has no built-in --describe
+// handler, so print the manifest ourselves and exit before starting the server.
+if (process.argv.includes("--describe")) {
+  process.stdout.write(JSON.stringify(manifest));
+  process.exit(0);
+}
 
 createPlugin({
   async execute(req) {
