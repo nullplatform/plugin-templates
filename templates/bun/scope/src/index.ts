@@ -1,5 +1,5 @@
 import pkg from "../package.json";
-import { defineScope } from "@nullplatform/plugin/scope";
+import { defineScope, Actions } from "@nullplatform/plugin/scope";
 import type { infer as Infer } from "@nullplatform/plugin/schema";
 import { createScope } from "./actions/create-scope";
 import { deleteScope } from "./actions/delete-scope";
@@ -16,9 +16,9 @@ import { readLogs } from "./actions/log-read";
 import { listInstances } from "./actions/instance-data";
 
 // --- Scope schema ---
-// Properties that users configure when creating a scope.
-// Each property appears in the UI form and arrives in service.attributes.
-// Supported keywords: type, default, enum, order, secret, visibleOn, editableOn, export
+// Properties users configure when creating a scope. Each appears in the form
+// and arrives in ctx.attributes. Keys are YOUR namespace — declare them
+// camelCase and read them the same way.
 
 export const scopeSchema = {
   type: "object",
@@ -32,7 +32,8 @@ export const scopeSchema = {
 export type ScopeAttributes = Infer<typeof scopeSchema>;
 
 // --- Action input schemas ---
-// These match the platform notification payload shape.
+// These describe the WIRE payload the platform sends (snake_case by contract).
+// Your handlers never read it directly — the SDK maps it into ctx.
 
 export const scopeAction = {
   type: "object",
@@ -43,8 +44,6 @@ export const scopeAction = {
   },
   required: ["parameters", "service"],
 } as const;
-
-export type ScopeActionInput = Infer<typeof scopeAction>;
 
 export const deploymentAction = {
   type: "object",
@@ -60,8 +59,6 @@ export const deploymentAction = {
   required: ["parameters", "service"],
 } as const;
 
-export type DeploymentActionInput = Infer<typeof deploymentAction>;
-
 // --- Plugin definition ---
 
 defineScope({
@@ -69,18 +66,12 @@ defineScope({
   version: pkg.version,
   description: "{{ .Name }} scope plugin",
   // How the platform UI groups this scope type and the infra it targets.
-  // Defaults to "custom"; change them here if your scope maps to a known
-  // category/provider (e.g. "serverless" / "aws").
   category: "custom",
   provider: "custom",
 
   // How the platform routes actions to your worker. Optional — defaults to
-  // selector { package: "{{ .Slug }}" } and entrypoint
-  // /app/packages/{{ .Slug }}/entrypoint. Uncomment to override:
-  // agent: {
-  //   selector: { package: "{{ .Slug }}" },
-  //   entrypoint: "/app/packages/{{ .Slug }}/entrypoint",
-  // },
+  // selector { package: "{{ .Slug }}" }, sources derived from your actions.
+  // agent: { selector: { package: "{{ .Slug }}" }, sources: ["service", "telemetry"] },
 
   schema: scopeSchema,
 
@@ -93,59 +84,47 @@ defineScope({
   },
 
   actions: {
-    "create-scope": {
+    // Scope lifecycle — the deploy target's footprint, never workloads.
+    [Actions.CREATE_SCOPE]: {
       input: scopeAction,
       output: { type: "object", properties: { message: { type: "string" } } },
       handler: createScope,
     },
-    "delete-scope": {
+    [Actions.DELETE_SCOPE]: {
       input: scopeAction,
       output: { type: "object" },
       handler: deleteScope,
     },
-    "start-initial": {
+
+    // Deployment lifecycle — where workloads actually land.
+    [Actions.START_INITIAL]: {
       input: deploymentAction,
       output: { type: "object", properties: { deployment_id: { type: "string" } } },
       handler: startInitial,
     },
-    "start-blue-green": {
+    [Actions.START_BLUE_GREEN]: {
       input: deploymentAction,
       output: { type: "object", properties: { deployment_id: { type: "string" } } },
       handler: startBlueGreen,
     },
-    "switch-traffic": {
-      input: deploymentAction,
-      output: { type: "object" },
-      handler: switchTraffic,
-    },
-    "finalize-blue-green": {
-      input: deploymentAction,
-      output: { type: "object" },
-      handler: finalizeBlueGreen,
-    },
-    "rollback-deployment": {
-      input: deploymentAction,
-      output: { type: "object" },
-      handler: rollbackDeployment,
-    },
-    "delete-deployment": {
-      input: deploymentAction,
-      output: { type: "object" },
-      handler: deleteDeployment,
-    },
-    "diagnose-scope": {
+    [Actions.SWITCH_TRAFFIC]: { input: deploymentAction, output: { type: "object" }, handler: switchTraffic },
+    [Actions.FINALIZE_BLUE_GREEN]: { input: deploymentAction, output: { type: "object" }, handler: finalizeBlueGreen },
+    [Actions.ROLLBACK_DEPLOYMENT]: { input: deploymentAction, output: { type: "object" }, handler: rollbackDeployment },
+    [Actions.DELETE_DEPLOYMENT]: { input: deploymentAction, output: { type: "object" }, handler: deleteDeployment },
+
+    // Diagnostics.
+    [Actions.DIAGNOSE_SCOPE]: {
       input: scopeAction,
       output: { type: "object", properties: { healthy: { type: "boolean" } } },
       handler: diagnoseScope,
     },
-    "diagnose-deployment": {
+    [Actions.DIAGNOSE_DEPLOYMENT]: {
       input: deploymentAction,
       output: { type: "object", properties: { healthy: { type: "boolean" } } },
       handler: diagnoseDeployment,
     },
 
-    // A CUSTOM action — any slug you like. The SDK has no defaults for it, so
-    // declare name/type here (type "custom" runs as a normal scope action).
+    // A CUSTOM action — any slug you like (custom slugs stay plain strings).
     "say-hello": {
       name: "Say Hello",
       type: "custom",
@@ -154,10 +133,9 @@ defineScope({
       handler: sayHello,
     },
 
-    // Telemetry — ephemeral data-fetch actions ("log:"/"instance:" prefixes).
-    // Declaring them adds "telemetry" to the package's channel sources (the SDK
-    // derives sources from actions; override via agent.sources if needed).
-    "log:read": { input: { type: "object" }, handler: readLogs },
-    "instance:data": { input: { type: "object" }, handler: listInstances },
+    // Telemetry — same handler shape as everything else. Declaring these adds
+    // "telemetry" to the package's channel sources automatically.
+    [Actions.LOG_READ]: { input: { type: "object" }, handler: readLogs },
+    [Actions.INSTANCE_DATA]: { input: { type: "object" }, handler: listInstances },
   },
 });

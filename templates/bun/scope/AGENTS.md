@@ -24,7 +24,7 @@ config/             node-config env mapping
 
 ## How to add / change an action
 
-1. Add a handler in `src/actions/<name>.ts`: `async (notification, emit) => result`.
+1. Add a handler in `src/actions/<name>.ts`: `async (ctx) => result` — ctx carries `scopeId`/`deploymentId`, `attributes`, `log`, `emit`, and `state`.
 2. Wire it in `src/index.ts` under `actions` with its `input`/`output` schema.
 3. `mise run describe` to confirm it's in the manifest; `mise run test`.
 

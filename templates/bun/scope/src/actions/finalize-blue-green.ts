@@ -1,8 +1,9 @@
-import type { DeploymentActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const finalizeBlueGreen = async (notification: DeploymentActionInput, _emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  console.log("finalize-blue-green: scope " + ctx.scopeId + " deployment " + ctx.deploymentId);
-  return { deployment_id: ctx.deploymentId };
+/** Promote green, retire blue. */
+export const finalizeBlueGreen = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.ok(`promoted deployment ${ctx.deploymentId}; previous workload retired`);
+  // TODO: retire the old workload
+  return {};
 };

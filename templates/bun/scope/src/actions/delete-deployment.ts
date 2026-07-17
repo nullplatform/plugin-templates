@@ -1,9 +1,10 @@
-import type { DeploymentActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const deleteDeployment = async (notification: DeploymentActionInput, emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  emit({ stdout: `Deleting deployment ${ctx.deploymentId} of scope ${ctx.scopeId}` });
-  // TODO: tear down the deployment's resources
-  return { message: `Deployment ${ctx.deploymentId} deleted` };
+/** Tear down one deployment's workload. */
+export const deleteDeployment = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.step(`delete-deployment ${ctx.deploymentId}`);
+  // TODO: terminate the deployment's workload
+  ctx.log.ok("terminated");
+  return {};
 };

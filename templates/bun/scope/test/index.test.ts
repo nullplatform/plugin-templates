@@ -26,25 +26,35 @@ describe("{{ .Name }} plugin", () => {
     expect(manifest.actions["rollback-deployment"]).toBeDefined();
   });
 
-  test("buildContext parses scope input", async () => {
-    const { buildContext } = await import("../src/context");
-    const ctx = buildContext({
-      parameters: { scope_id: "s-1" },
-      service: { attributes: { enabled: true, name: "test" } },
-      tags: {},
-    } as any);
+  test("the SDK maps a scope payload into ctx", async () => {
+    const { buildActionContext } = await import("@nullplatform/plugin/scope");
+    const noopState = { read: async () => ({}), merge: async () => {} };
+    const ctx = buildActionContext(
+      {
+        parameters: { scope_id: "s-1" },
+        service: { attributes: { enabled: true, name: "test" } },
+        tags: {},
+      } as any,
+      () => {},
+      noopState,
+    );
 
     expect(ctx.scopeId).toBe("s-1");
-    expect(ctx.attributes.enabled).toBe(true);
+    expect((ctx.attributes as any).enabled).toBe(true);
   });
 
-  test("buildContext parses deployment input", async () => {
-    const { buildContext } = await import("../src/context");
-    const ctx = buildContext({
-      parameters: { scope_id: "s-1", deployment_id: "d-1", weight: 50 },
-      service: { attributes: { enabled: true, name: "test" } },
-      tags: {},
-    } as any);
+  test("the SDK maps a deployment payload into ctx", async () => {
+    const { buildActionContext } = await import("@nullplatform/plugin/scope");
+    const noopState = { read: async () => ({}), merge: async () => {} };
+    const ctx = buildActionContext(
+      {
+        parameters: { scope_id: "s-1", deployment_id: "d-1", weight: 50 },
+        service: { attributes: { enabled: true, name: "test" } },
+        tags: {},
+      } as any,
+      () => {},
+      noopState,
+    );
 
     expect(ctx.deploymentId).toBe("d-1");
     expect(ctx.weight).toBe(50);

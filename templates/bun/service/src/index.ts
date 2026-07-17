@@ -1,9 +1,12 @@
 import pkg from "../package.json";
-import { defineService } from "@nullplatform/plugin/service";
+import { defineService, ServiceActions, type ActionContext } from "@nullplatform/plugin/service";
 
 // A SERVICE package defines an application dependency (database, cache, queue…).
 // With useDefaultActions the platform generates the create/update/delete action
 // specs from `schema` — you only write the handlers below, keyed by action type.
+//
+// Every handler receives the ONE typed ctx: attributes (what the user
+// configured), log (live action messages), emit, and the raw notification.
 defineService({
   name: "{{ .Slug }}",
   version: pkg.version,
@@ -17,26 +20,31 @@ defineService({
   },
   useDefaultActions: true,
   actions: {
-    create: {
+    [ServiceActions.CREATE]: {
       input: { type: "object" },
-      handler: async (notification, emit) => {
-        const size = notification.service?.attributes?.size ?? "small";
-        emit({ stdout: `provisioning {{ .Slug }} (size=${size})` });
-        // TODO: provision the real dependency here.
-        return { message: "{{ .Slug }} created" };
+      handler: async (ctx: ActionContext) => {
+        const size = String((ctx.attributes as { size?: string }).size ?? "small");
+        ctx.log.step(`provisioning {{ .Slug }} (size=${size})`);
+        // TODO: create the real dependency
+        ctx.log.ok(`{{ .Slug }} created`);
+        return { size, message: "{{ .Slug }} created" };
       },
     },
-    update: {
+    [ServiceActions.UPDATE]: {
       input: { type: "object" },
-      handler: async (notification, emit) => {
-        emit({ stdout: `updating {{ .Slug }}` });
+      handler: async (ctx: ActionContext) => {
+        ctx.log.step(`updating {{ .Slug }}`);
+        // TODO: apply the change to the real dependency
+        ctx.log.ok(`{{ .Slug }} updated`);
         return { message: "{{ .Slug }} updated" };
       },
     },
-    delete: {
+    [ServiceActions.DELETE]: {
       input: { type: "object" },
-      handler: async (_notification, emit) => {
-        emit({ stdout: `deleting {{ .Slug }}` });
+      handler: async (ctx: ActionContext) => {
+        ctx.log.step(`deleting {{ .Slug }}`);
+        // TODO: deprovision the real dependency
+        ctx.log.ok(`{{ .Slug }} deleted`);
         return { message: "{{ .Slug }} deleted" };
       },
     },
