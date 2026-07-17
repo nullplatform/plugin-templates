@@ -1,8 +1,9 @@
-import type { DeploymentActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const switchTraffic = async (notification: DeploymentActionInput, _emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  console.log("switch-traffic: scope " + ctx.scopeId + " deployment " + ctx.deploymentId);
-  return { deployment_id: ctx.deploymentId };
+/** Shift traffic between blue and green. */
+export const switchTraffic = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.ok(`routing ${ctx.weight ?? 100}% of traffic to deployment ${ctx.deploymentId}`);
+  // TODO: reweight your load balancer / ingress
+  return {};
 };

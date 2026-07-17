@@ -1,10 +1,10 @@
-import type { ScopeActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-// emit({ stdout }) shows up as a live message on the action in the UI.
-export const createScope = async (notification: ScopeActionInput, emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  emit({ stdout: `Creating scope ${ctx.scopeId}` });
-  // TODO: provision infrastructure here
+/** A scope is a deploy target: create its footprint here — never workloads. */
+export const createScope = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.step(`create-scope ${ctx.scopeId}`);
+  // TODO: provision (or verify) whatever your target needs
+  ctx.log.ok(`scope ${ctx.scopeId} ready`);
   return { message: `Scope ${ctx.scopeId} created` };
 };

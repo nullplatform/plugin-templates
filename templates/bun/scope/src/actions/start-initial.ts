@@ -1,8 +1,10 @@
-import type { DeploymentActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const startInitial = async (notification: DeploymentActionInput, _emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  console.log("start-initial: scope " + ctx.scopeId + " deployment " + ctx.deploymentId);
+/** The first deployment into the scope — launch the workload here. */
+export const startInitial = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.step(`start-initial: deployment ${ctx.deploymentId} on scope ${ctx.scopeId}`);
+  // TODO: deploy ctx.assetUrl to your infrastructure
+  ctx.log.ok(`deployment ${ctx.deploymentId} running`);
   return { deployment_id: ctx.deploymentId };
 };

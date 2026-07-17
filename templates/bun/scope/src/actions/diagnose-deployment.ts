@@ -1,9 +1,9 @@
-import type { DeploymentActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const diagnoseDeployment = async (notification: DeploymentActionInput, emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  emit({ stdout: `Diagnosing deployment ${ctx.deploymentId}` });
-  // TODO: inspect the deployment and collect findings
-  return { healthy: true, findings: [] as string[] };
+/** Report one deployment's health. */
+export const diagnoseDeployment = async (ctx: ActionContext<ScopeAttributes>) => {
+  // TODO: check the deployment's workload health
+  ctx.log.ok(`deployment ${ctx.deploymentId} healthy`);
+  return { healthy: true, findings: [] };
 };

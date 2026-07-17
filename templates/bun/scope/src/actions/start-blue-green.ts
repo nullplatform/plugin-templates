@@ -1,8 +1,10 @@
-import type { DeploymentActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const startBlueGreen = async (notification: DeploymentActionInput, _emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  console.log("start-blue-green: scope " + ctx.scopeId + " deployment " + ctx.deploymentId);
+/** Launch the new (green) workload alongside the current one. */
+export const startBlueGreen = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.step(`start-blue-green: deployment ${ctx.deploymentId} on scope ${ctx.scopeId}`);
+  // TODO: deploy the green workload
+  ctx.log.ok(`deployment ${ctx.deploymentId} running`);
   return { deployment_id: ctx.deploymentId };
 };

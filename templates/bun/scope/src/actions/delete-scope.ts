@@ -1,8 +1,10 @@
-import type { ScopeActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-export const deleteScope = async (notification: ScopeActionInput, _emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  console.log(`Deleting scope ${ctx.scopeId}`);
+/** Reclaim everything the scope ever owned. */
+export const deleteScope = async (ctx: ActionContext<ScopeAttributes>) => {
+  ctx.log.step(`delete-scope ${ctx.scopeId}`);
+  // TODO: deprovision the target's footprint
+  ctx.log.ok("footprint clean");
   return {};
 };

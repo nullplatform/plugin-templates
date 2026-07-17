@@ -1,10 +1,9 @@
-import type { ScopeActionInput } from "../index";
-import { buildContext } from "../context";
+import type { ActionContext } from "@nullplatform/plugin/scope";
+import type { ScopeAttributes } from "../index";
 
-// diagnose actions report health; return findings in the result.
-export const diagnoseScope = async (notification: ScopeActionInput, emit: (o: { stdout?: string }) => void) => {
-  const ctx = buildContext(notification);
-  emit({ stdout: `Diagnosing scope ${ctx.scopeId}` });
-  // TODO: inspect the scope's infrastructure and collect findings
-  return { healthy: true, findings: [] as string[] };
+/** Report the scope's health. */
+export const diagnoseScope = async (ctx: ActionContext<ScopeAttributes>) => {
+  // TODO: check your infrastructure's health for this scope
+  ctx.log.ok(`scope ${ctx.scopeId} healthy`);
+  return { healthy: true, findings: [] };
 };
