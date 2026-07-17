@@ -45,6 +45,8 @@ sdks:
 
 templates:
   - id: scope-bun
+    name: Scope (TypeScript/Bun)
+    description: A deployment target — the platform deploys apps to your infrastructure (Kubernetes flavor, Lambda, VMs…).
     path: bun/scope
     type: scope
     sdk: bun
@@ -54,11 +56,13 @@ templates:
     next_steps:
       - "cd {{ .Slug }}"
       - "np package test            # run tests"
-      - "np package dev             # local dev with UI"
-      - "np package dev --agent     # local dev with np-agent attached"
-      - "np package publish         # build + push the worker image + sync with the platform"
+      - "np package dev             # local dev with UI (no platform calls)"
+      - "np package publish         # register the type + push the worker image"
+      - "np package run             # serve real platform actions from this machine"
 
   - id: simple-bun
+    name: Command handler (TypeScript/Bun)
+    description: Run code when the platform dispatches a command — health checks, migrations, notifications, glue.
     path: bun/simple
     type: simple
     sdk: bun
@@ -69,10 +73,12 @@ templates:
       - "cd {{ .Slug }}"
       - "np package test            # run tests"
       - "np package dev             # local dev with hot reload"
-      - "np package dev --agent     # local dev with np-agent attached"
-      - "np package publish         # build + push the worker image"
+      - "np package publish         # register + push the worker image"
+      - "np package run             # serve real platform actions from this machine"
 
   - id: service-bun
+    name: Service / dependency (TypeScript/Bun)
+    description: An application dependency apps can request — databases, caches, queues, observability, CDNs.
     path: bun/service
     type: service
     sdk: bun
@@ -83,5 +89,5 @@ templates:
       - "cd {{ .Slug }}"
       - "np package test            # run tests"
       - "np package dev             # local dev with hot reload"
-      - "np package dev --agent     # local dev with np-agent attached"
-      - "np package publish         # build + push the worker image"
+      - "np package publish         # register + push the worker image"
+      - "np package run             # serve real platform actions from this machine"
