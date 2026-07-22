@@ -11,7 +11,7 @@
     "publish:image": "bash scripts/publish-image.sh"
   },
   "dependencies": {
-    "@nullplatform/plugin": "0.0.4-alpha.10",
+    "@nullplatform/plugin": "0.0.4",
     "@nullplatform/workflow": "^0.0.5",
     "@nullplatform/workflow-engine-in-memory": "^0.0.5",
     "config": "^4.4.2"
