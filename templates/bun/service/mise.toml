@@ -73,6 +73,11 @@ docker run --rm --name np-{{ .Slug }}-agent --network host \
   "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:alpha-packages-2.2.0}" \
   -runtime=host -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}"
 """
+# Dynamic / multi-package agent (opt-in): drop the NP_WORKER_IMAGE pin above and
+# instead gate on an allow-list — the agent resolves each package's image from
+# the action payload and only spawns it when its registry matches. Deny-by-default:
+#   -e NP_ALLOWED_REGISTRIES="ghcr.io/your-org/*"
+# A pinned NP_WORKER_IMAGE (the default above) is trusted and bypasses the list.
 
 # `np package publish` runs this (when --image is omitted): build the lean worker
 # image, push it to $NP_PUSH_REGISTRY (any registry you're `docker login`ed to),
