@@ -1,54 +1,72 @@
 # AGENTS.md — {{ .Name }}
 
-Guidance for AI agents / new contributors working in this **scope** package.
+Rules for AI assistants and new contributors working in this package.
 
 ## What this is
 
-A nullplatform scope plugin: a deployment target defined with
-`defineScope({...})` from `@nullplatform/plugin/scope`. It's compiled to a
-standalone binary and run as a **gRPC worker** — the controlplane agent spawns
-it (a pod in Kubernetes, a container in Docker) and streams actions to it. You
-write action handlers; the SDK owns the gRPC server, action routing, lifecycle
-(in_progress → success/failed), and `--describe`.
+A nullplatform **package**: the scope `{{ .Slug }}` (a deployment target)
+and its scope type, declared as values with `@nullplatform/plugin/package`,
+with one handler function per action. `src/main.ts` is `pkg.start()`:
+`--describe` prints the manifest, an action in `NP_ACTION_CONTEXT` runs once,
+otherwise the gRPC server serves the agent. `Dockerfile` compiles it to one
+binary.
 
 ## File map
 
 ```
-src/
-  index.ts          defineScope: schema, uiSchema, action → handler wiring
-  actions/*.ts      one file per action (create-scope, start-initial, log:read, …)
-Dockerfile          lean worker image (the agent spawns this)
-mise.toml           tasks: dev, test, build:image, run, publish:image
-config/             node-config env mapping
+src/resources.ts   scope() + scopeType(): the specification and the type, as values
+src/scope.ts       create-scope / delete-scope
+src/deployment.ts  start-initial / switch-traffic / finalize-blue-green / rollback-deployment
+src/logs.ts        log:read
+src/package.ts     definePackage({ name, version, description, resources, handlers })
+src/main.ts        pkg.start()
+test/*.test.ts     pkg.run(resource, action, input, context)
+Dockerfile         worker image, non-root; entrypoint /app/packages/{{ .Slug }}/entrypoint
+mise.toml          describe · test · build · dev · build:image · run · publish:image
 ```
 
-## How to add / change an action
+## Rules
 
-1. Add a handler in `src/actions/<name>.ts`: `async (ctx) => result` — ctx carries `scopeId`/`deploymentId`, `attributes`, `log`, `emit`, and `state`.
-2. Wire it in `src/index.ts` under `actions` with its `input`/`output` schema.
-3. `mise run describe` to confirm it's in the manifest; `mise run test`.
+- **Declarations use the service API's own fields, in camelCase.** `scope()`
+  takes what `POST /service_specification` takes (`assignableTo`,
+  `selectors.subCategory`, …) plus `actions` (the well-known slugs from
+  `Actions`) and `telemetry`. The manifest converts field names to snake_case.
+  The JSON schema travels verbatim: property names and keywords (`visibleOn`,
+  `editableOn`, `order`, `readOnly`) are never converted.
+- **`handle()` is exhaustive.** Every action in `actions` (and every telemetry
+  source) has exactly one handler and every handler answers a declared action;
+  a mismatch throws at definition time, before anything is published. Add an
+  action to `actions` and its handler in the same change.
+- **A scope provisions nothing on create.** `create-scope` builds the target's
+  footprint; the workload lands on `start-initial` and the other deployment
+  actions. Lifecycle handlers return nothing.
+- **Traffic is reported, not returned.** `switch-traffic` calls
+  `ctx.deployment.reportTraffic(ctx.weight)`; the platform does not read it off
+  the results.
+- **Data actions return exactly their shape.** `log:read` returns
+  `{ results: [{ message, datetime }] }` and nothing else; the platform shows
+  what comes back and tracks no lifecycle for it.
+- **`ctx.params` is the input**: the scope's attributes merged with the
+  action's parameters. `ctx.scopeId`, `ctx.deploymentId`, `ctx.assetUrl` and
+  `ctx.weight` are the platform-owned values, already mapped.
+- **Fail with a name.** `throw new ActionError("CODE", message)`;
+  `ActionError.retry(...)` when the platform may try again. Any other throw is
+  reported as `EXECUTION_ERROR`.
+- **`ctx.step(name, fn)` is the unit of work**, `ctx.log.*` the action's live
+  log. Never `console.log` inside a handler — a data action's stdout is its
+  answer.
+- **Tests are `pkg.run`.** `await pkg.run(target, Actions.START_INITIAL, input, { scope, service })`
+  returns `{ status, results, data, error, logs, steps }`: assert on those.
+  The only platform call a handler makes itself (`reportTraffic`) is stubbed
+  at the HTTP boundary in `test/scope.test.ts`.
+- **Handlers are idempotent.** The platform retries; a second `create-scope`
+  or `delete-scope` must find the work done and succeed.
+- Never set `NP_MODE=dev` in the image: it switches the SDK to the in-memory
+  platform client and the worker never reports lifecycle.
 
-## Rules that matter (don't break these)
+## Verify
 
-- **`emit({ stdout })` is the action logger** — lines post to the service action
-  and show live in the UI. Use it for progress. It is NOT the return value.
-- **Data-fetch actions** (`log:read`, `instance:data`, anything under
-  `log:`/`metric:`/`instance:`) must **return exactly the result shape** the
-  platform validates (e.g. `{ results: [{ message, datetime }] }`) and must NOT
-  write anything else to stdout — the platform reads stdout as that JSON. Don't
-  `console.log` in a data-fetch handler; the SDK routes `emit` to the log API
-  only for these, never the stdout stream.
-- **A scope provisions nothing on create.** The workload is created by the
-  deployment actions (`start-initial` / `start-blue-green`). Keep `create-scope`
-  side-effect free.
-- **Never set `NP_MODE=dev` in the image** — it switches the SDK to the in-memory
-  client and the worker never reports lifecycle (scopes hang).
-- The worker reaches the cluster (if it needs to) with its in-cluster
-  ServiceAccount; the agent injects TLS, the API key, and the cluster CA trust.
-  Don't hand-roll credentials.
-
-## Run / test
-
-- `mise run test` — unit tests.
-- `mise run dev` — dev UI against fixtures (no platform calls).
-- `np package run` — real local run: dockerized agent spawns this worker. Needs `NP_API_KEY`.
+```bash
+mise run test
+mise run describe
+```
