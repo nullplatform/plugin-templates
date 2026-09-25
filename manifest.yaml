@@ -11,7 +11,8 @@ version: 1
 # Prompts (category `variables`) ask ONLY for what the scaffold can't derive:
 # the human name (the slug is auto-derived from it). Everything else — scope
 # category/provider, agent routing — is declared in code via the SDK
-# (defineScope/defineService), the single source of truth, and changed there.
+# (service()/scope() in src/resources.ts), the single source of truth, and
+# changed there.
 
 categories:
   - type: scope
@@ -46,7 +47,7 @@ sdks:
 templates:
   - id: scope-bun
     name: Scope (TypeScript/Bun)
-    description: A deployment target — the platform deploys apps to your infrastructure (Kubernetes flavor, Lambda, VMs…).
+    description: A deployment target on the SDK's package layer — the scope, its scope type and each lifecycle action (create, deploy, switch traffic, roll back, logs) as a typed handler; tests are one pkg.run() call.
     path: bun/scope
     type: scope
     sdk: bun
@@ -55,10 +56,10 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "np package test            # run tests"
-      - "np package dev             # local dev with UI (no platform calls)"
-      - "np package publish         # register the type + push the worker image"
-      - "np package run             # serve real platform actions from this machine"
+      - "mise run test              # every action in-process, no platform"
+      - "np package dev             # browser dev UI against a mock platform"
+      - "np package run             # a real agent on this machine spawns the worker"
+      - "np package publish         # push the worker image + register the package"
 
   - id: simple-bun
     name: Command handler (TypeScript/Bun)
@@ -78,7 +79,7 @@ templates:
 
   - id: service-bun
     name: Service / dependency (TypeScript/Bun)
-    description: An application dependency apps can request — databases, caches, queues, observability, CDNs.
+    description: An application dependency on the SDK's package layer — the service and its connect link declared as values, create/update/delete as typed handlers; tests are one pkg.run() call.
     path: bun/service
     type: service
     sdk: bun
@@ -87,7 +88,7 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "np package test            # run tests"
-      - "np package dev             # local dev with hot reload"
-      - "np package publish         # register + push the worker image"
-      - "np package run             # serve real platform actions from this machine"
+      - "mise run test              # every action in-process, no platform"
+      - "np package dev             # browser dev UI against a mock platform"
+      - "np package run             # a real agent on this machine spawns the worker"
+      - "np package publish         # push the worker image + register the package"

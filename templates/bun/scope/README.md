@@ -1,65 +1,45 @@
 # {{ .Name }}
 
-A nullplatform **scope** plugin (deployment target) built with the
-`@nullplatform/plugin` SDK and run as a lean gRPC worker the controlplane agent
-spawns on demand.
+A nullplatform **scope** — a place the platform deploys applications to — as a
+**package**. The scope, its scope type and every lifecycle action are declared
+in code with `@nullplatform/plugin`, each action is a TypeScript function, and
+one `np package publish` registers all of it.
 
-A *scope* is a place the platform can deploy to. Creating a scope provisions
-nothing on its own — the workload lands when a **deployment** action runs.
+Creating a scope provisions nothing for the workload: that happens on the
+deployment actions.
 
-## Prerequisites
+## What to edit
 
-- [mise](https://mise.jdx.dev) (`brew install mise`) — runs every task here
-- Docker (for `run` / building the worker image)
-- The `np` CLI — `curl https://cli.nullplatform.com/install.sh | sh`
-- `NP_API_KEY` in your environment
+| File | What it is |
+|---|---|
+| `src/resources.ts` | the scope (the attributes the user sets, the actions it answers) and its scope type |
+| `src/scope.ts` | `create-scope` / `delete-scope`: the target's footprint |
+| `src/deployment.ts` | `start-initial` / `switch-traffic` / `finalize-blue-green` / `rollback-deployment`: where the workload lands |
+| `src/logs.ts` | `log:read`: the workload's logs, as data |
+| `src/package.ts` | `definePackage`: resources + handlers (name, version and description come from `package.json`) |
+| `test/` | one `pkg.run()` per action: status, steps, logs, and what the platform is told |
+
+The body of every `ctx.step(...)` is a placeholder for your infrastructure.
 
 ## Develop
 
 ```bash
-mise run dev        # form-based dev UI: trigger actions against fixtures, hot reload
-mise run test       # run the test suite
-mise run describe   # print the plugin manifest (what publish registers)
+mise run test        # every action in-process, no platform
+mise run describe    # the manifest np package publish sends
+np package dev       # browser dev UI: pick an action, edit the notification, run it
 ```
 
-## Run it locally
-
-`np package run` (or `mise run run`) runs the package **exactly like production**:
-it starts a controlplane agent in Docker with the worker orchestrator, which
-builds + spawns this package's lean worker container and streams actions to it
-over gRPC/mTLS.
+## Run and publish
 
 ```bash
-export NP_API_KEY=...        # your nullplatform API key
-mise run run                 # builds the worker image, runs the agent (docker backend)
+export NP_API_KEY=...
+np package run                                       # a real agent on this machine, tagged local:<you>, spawns the worker image
+np package publish --nrn organization=…:account=…   # build + push the image, register the scope type and its actions
 ```
 
-Under the hood it pulls the controlplane agent image, sets `NP_WORKER_BACKEND=docker`
-+ `NP_WORKER_IMAGE={{ .Slug }}-worker:dev`, and advertises `-tags package:{{ .Slug }}`
-so the platform routes this package's actions to your local agent. Then create a
-scope of this type in the UI/CLI and watch it run against your machine.
-
-Override the agent image with `NP_AGENT_IMAGE` if you need a specific build.
-
-## Actions
-
-| Action | What it does |
-|---|---|
-| `create-scope` / `delete-scope` | register / tear down the target (no workload) |
-| `start-initial` / `start-blue-green` | deploy the workload |
-| `switch-traffic` / `finalize-blue-green` / `rollback-deployment` | traffic lifecycle |
-| `delete-deployment` | remove one deployment |
-| `diagnose-scope` / `diagnose-deployment` | health checks |
-| `log:read` / `instance:data` | telemetry (logs + instances) |
-
-Handlers live in `src/actions/`; they're wired in `src/index.ts` via `defineScope`.
-
-## Publish
-
-Cut a GitHub Release (or run the release workflow). CI builds the multi-arch
-worker image, pushes it to your registry, and runs `np package publish`, which
-registers the scope type, actions, channel, and a package revision pinned to the
-image. Configure the `NULLPLATFORM_API_KEY` secret and `NP_NRN` variable in the
-repo. See `.github/workflows/release.yml`.
+Then create a scope of this type in the console and deploy to it: while
+`np package run` is up, the actions run on your machine. Cutting a GitHub
+Release runs `.github/workflows/release.yml`, which publishes from CI (secret
+`NULLPLATFORM_API_KEY`, variable `NP_NRN`).
 
 New to the code? Read `AGENTS.md`.

@@ -1,82 +1,85 @@
 [tools]
 bun = "latest"
-oras = "latest"
 
-# Install runs on demand and is the root of the task dependency graph.
-# Every other task declares `depends = ["install"]` so a fresh clone
-# just works — no need to remember `mise install` before `mise run dev`.
+# The SDK reads its settings through node-config and, with no config/ directory
+# here, falls back to plain env vars; this keeps node-config quiet about it.
+[env]
+SUPPRESS_NO_CONFIG_WARNING = "1"
+
+# Install is the root of the task graph: every task depends on it, so a fresh
+# clone just works without remembering `bun install` first.
 [tasks.install]
 description = "Install dependencies"
 run = "bun install"
 sources = ["package.json", "bun.lock"]
 
-[tasks.test]
-description = "Run tests"
-depends = ["install"]
-run = "bun run test"
-
 [tasks.describe]
-description = "Print plugin manifest"
+description = "Print the package manifest (what np package publish sends)"
 depends = ["install"]
-run = "bun run describe"
+run = "bun src/main.ts --describe"
+
+[tasks.test]
+description = "Run the tests: every action in-process through pkg.run(), no platform"
+depends = ["install"]
+run = "bun test"
 
 [tasks.build]
-description = "Compile the plugin to a standalone executable"
+description = "Compile the worker to a single binary"
 depends = ["install"]
-run = "bun run build"
+run = "bun build --compile src/main.ts --outfile dist/{{ .Slug }}"
 sources = ["src/**/*.ts", "package.json", "bun.lock"]
 outputs = ["dist/{{ .Slug }}"]
 
-[tasks."build:all"]
-description = "Cross-compile all release targets"
-depends = ["install"]
-run = """
-bun build --compile --target=bun-linux-x64   ./src/index.ts --outfile dist/{{ .Slug }}-linux-x64
-bun build --compile --target=bun-linux-arm64 ./src/index.ts --outfile dist/{{ .Slug }}-linux-arm64
-bun build --compile --target=bun-darwin-arm64 ./src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
-"""
-
-# `np plugin dev` → this task. For scope plugins the dev workflow is the
-# form-based UI tester (plugin-dev-ui) which renders the plugin schema and
-# lets you trigger actions interactively against test fixtures.
+# `np package dev` → the browser dev UI: every action from the manifest, the
+# notification the platform would send as the editor's starting point, live
+# output. Runs against a mock platform; never calls the real API.
 [tasks.dev]
-description = "Run the plugin with the dev UI"
+description = "Run the package with the dev UI"
 depends = ["install"]
-run = "bun run dev"
+run = "bunx @nullplatform/plugin-dev-ui --plugin ."
 
-
-# Build the LEAN gRPC worker image (the image the agent spawns and dials over
-# gRPC/mTLS). Just the compiled package binary on a minimal base — the agent
-# injects the port + TLS + API key at runtime.
+# The worker image: the compiled package on a minimal base. The agent spawns
+# it and dials it over gRPC/mTLS, injecting the port, the TLS material and the
+# API key at runtime.
 [tasks."build:image"]
-description = "Build the lean gRPC worker image"
+description = "Build the worker image"
 run = "docker build -t {{ .Slug }}-worker:dev ."
 
-# `np package run` → run this package locally the way production does: a
-# controlplane-agent with the worker orchestrator (docker backend) that SPAWNS
-# the lean worker container and talks to it over gRPC/mTLS. Needs NP_API_KEY.
-# --network host so the agent can reach the worker it publishes on the host
-# (Linux; on Docker Desktop enable host networking). Override the agent image
-# with NP_AGENT_IMAGE until the orchestrator agent is the default tag.
+# `np package run` → run this package the way production does: a controlplane
+# agent in Docker (worker backend) that spawns the worker image and streams
+# actions to it over gRPC/mTLS. Needs NP_API_KEY. --network host so the agent
+# reaches the worker it publishes on the host (Linux; on Docker Desktop enable
+# host networking). The CLI hands over NP_PACKAGE_ENV_FLAGS / NP_PACKAGE_ENV_JSON
+# so this shell's environment reaches the worker; both are empty under a plain
+# `mise run run` and the task still works.
 [tasks.run]
-description = "Run locally: an agent (docker backend) that spawns the lean worker"
+description = "Run locally: an agent (docker backend) that spawns this package's worker"
 depends = ["build:image"]
 run = """
 set -eu
 : "${NP_API_KEY:?set NP_API_KEY}"
+slug="${NP_PACKAGE_SLUG:-{{ .Slug }}}"
+env_json='{}'
+[ -n "${NP_PACKAGE_ENV_JSON:-}" ] && env_json="$NP_PACKAGE_ENV_JSON"
+worker_rules='[{"match":{"package":"'"$slug"'"},"env":'"$env_json"'}]'
 docker rm -f np-{{ .Slug }}-agent >/dev/null 2>&1 || true
+stale=$(docker ps -aq --filter "name=np-worker-.*-${slug}-")
+[ -n "$stale" ] && docker rm -f $stale >/dev/null 2>&1
+# shellcheck disable=SC2086
 docker run --rm --name np-{{ .Slug }}-agent --network host \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  ${NP_PACKAGE_ENV_FLAGS:-} \
   -e NP_API_KEY -e NP_LOG_LEVEL="${NP_LOG_LEVEL:-INFO}" \
   -e NP_WORKER_BACKEND=docker \
   -e NP_WORKER_IMAGE={{ .Slug }}-worker:dev \
-  "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:alpha-packages-2.2.0}" \
-  -runtime=host -tags=package:{{ .Slug }},local:"${NP_LOCAL_USER:-$USER}"
+  -e NP_WORKER_RULES="$worker_rules" \
+  "${NP_AGENT_IMAGE:-public.ecr.aws/nullplatform/controlplane-agent:latest}" \
+  -runtime=host -tags=package:"$slug",local:"${NP_LOCAL_USER:-$USER}"
 """
 
-# `np package publish` runs this (when --image is omitted): build the lean worker
-# image, push it to $NP_PUSH_REGISTRY (any registry you're `docker login`ed to),
+# `np package publish` runs this when --image is omitted: build + push the
+# worker image to $NP_PUSH_REGISTRY (any registry you are `docker login`ed to)
 # and print registry/repo@sha256:<digest> on stdout for the CLI to register.
 [tasks."publish:image"]
-description = "Build + push the lean worker image; prints its digest ref"
+description = "Build + push the worker image; prints its digest ref"
 run = "bash scripts/publish-image.sh"
