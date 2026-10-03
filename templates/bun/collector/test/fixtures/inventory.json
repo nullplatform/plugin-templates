@@ -1,0 +1,4 @@
+[
+  { "name": "billing", "team": "payments", "tier": "critical", "repository": "https://github.com/acme/billing" },
+  { "name": "legacy-reports", "team": "finance", "tier": "retired" }
+]

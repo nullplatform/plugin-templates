@@ -1,0 +1,5 @@
+[
+  { "name": "checkout", "team": "payments", "tier": "critical", "repository": "https://github.com/acme/checkout" },
+  { "name": "search", "team": "discovery", "tier": "standard", "repository": "https://github.com/acme/search" },
+  { "name": "notifications", "team": "platform", "tier": "standard" }
+]

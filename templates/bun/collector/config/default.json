@@ -1,0 +1,11 @@
+{
+  "api": {
+    "url": "https://api.nullplatform.com"
+  },
+  "collector": {
+    "intervalSeconds": 3600,
+    "settings": {
+      "inventoryFile": "data/inventory.json"
+    }
+  }
+}

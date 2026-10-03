@@ -1,0 +1,26 @@
+{
+  "name": "@nullplatform/collector-{{ .Slug }}",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "NP_MODE=dev bun --hot src/index.ts --run",
+    "once": "bun src/index.ts --once",
+    "test": "bun test",
+    "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
+    "describe": "bun src/index.ts --describe",
+    "publish:image": "bash scripts/publish-image.sh"
+  },
+  "dependencies": {
+    "@nullplatform/catalog-ingest": "^0.1.0",
+    "@nullplatform/plugin": "0.0.6",
+    "config": "^4.4.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "jsonata": "2.2.2"
+  },
+  "trustedDependencies": [
+    "@grpc/grpc-js"
+  ]
+}
