@@ -12,7 +12,7 @@
     "token": "NP_INGEST_TOKEN"
   },
   "collector": {
-    "sourceId": "NP_COLLECTOR_SOURCE_ID",
+    "sourceSlug": "NP_COLLECTOR_SOURCE_SLUG",
     "sourceName": "NP_COLLECTOR_SOURCE_NAME",
     "intervalSeconds": "NP_COLLECTOR_INTERVAL_SECONDS",
     "settings": {

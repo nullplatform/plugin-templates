@@ -11,7 +11,7 @@ You write two things:
   collector wrote earlier and no longer reports are soft-deleted (behind
   guards: an empty snapshot, or one that would delete too much, deletes
   nothing). A snapshot that throws is aborted and deletes nothing.
-- **`mappings`** — per record kind, an expression (JSONata, jq or CEL) that
+- **`mappings`** — per record type, an expression (JSONata, jq or CEL) that
   turns a raw record into a catalog entity `{ id, data }`. catalog-ingest-api
   evaluates it, validates `data` against the target specification and writes
   only what changed.
@@ -77,13 +77,13 @@ Exit codes of `--once`: `0` completed, `2` a guard tripped (nothing deleted),
 | `NP_INGEST_API_URL` | catalog-ingest-api base URL (required outside dev/test) |
 | `NP_API_KEY` | nullplatform API key, exchanged for tokens |
 | `NP_INGEST_TOKEN` | a ready bearer token instead (local API) |
-| `NP_COLLECTOR_SOURCE_ID` | the ingest source this deployment feeds (default: `{{ .Slug }}`) |
+| `NP_COLLECTOR_SOURCE_SLUG` | the slug of the ingest source this deployment feeds (default: `{{ .Slug }}`) |
 | `NP_COLLECTOR_SOURCE_NAME` | its display name |
 | `NP_COLLECTOR_INTERVAL_SECONDS` | seconds between snapshots (default: `collector.intervalSeconds`) |
 | `INVENTORY_FILE` | the example's own setting (`collector.settings.inventoryFile`) |
 
 Run one deployment per system you collect from (one per cluster, per org…),
-each with its own `NP_COLLECTOR_SOURCE_ID`.
+each with its own `NP_COLLECTOR_SOURCE_SLUG`.
 
 ## Deploy
 

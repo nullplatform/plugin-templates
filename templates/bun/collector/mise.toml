@@ -55,7 +55,7 @@ set -eu
 : "${NP_INGEST_API_URL:?set NP_INGEST_API_URL}"
 : "${NP_API_KEY:?set NP_API_KEY}"
 docker run --rm --name {{ .Slug }} -e NP_INGEST_API_URL -e NP_API_KEY \
-  -e NP_COLLECTOR_SOURCE_ID -e NP_COLLECTOR_INTERVAL_SECONDS {{ .Slug }}:dev
+  -e NP_COLLECTOR_SOURCE_SLUG -e NP_COLLECTOR_INTERVAL_SECONDS {{ .Slug }}:dev
 """
 
 # Build + push the image to $NP_PUSH_REGISTRY and print its digest ref.

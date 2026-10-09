@@ -26,9 +26,9 @@ mise.toml                tasks: test, dev, once, describe, build:image, run, pub
 ## How to change it
 
 1. Replace `snapshot` in `src/collector.ts` with your system of record: yield
-   one `{ kind, payload }` per object it holds. Keep payloads raw — shaping
+   one `{ type, payload }` per object it holds. Keep payloads raw — shaping
    belongs in the mapping.
-2. Write one mapping per record kind. It must return `{ id, data }` (a list, or
+2. Write one mapping per record type. It must return `{ id, data }` (a list, or
    `null` to skip the record). `data` must satisfy the target specification,
    primary key included. Declare optional properties nullable in the
    specification: a field that disappears from your mapping is then cleared
@@ -48,8 +48,8 @@ mise.toml                tasks: test, dev, once, describe, build:image, run, pub
 - **Observation time is ordering.** Snapshot records default to the snapshot's
   start; events should carry the time the change happened (`observedAt`). The
   newest observation of an entity wins, whatever order inputs arrive in.
-- **The source id is identity.** Entities belong to the source that wrote them;
-  only it can delete them. Changing `NP_COLLECTOR_SOURCE_ID` starts a new
+- **The source slug is identity.** Entities belong to the source that wrote them;
+  only it can delete them. Changing `NP_COLLECTOR_SOURCE_SLUG` starts a new
   source.
 - **Never set `NP_MODE=dev` in the image** — it switches to the in-memory ingest
   and sends nothing.

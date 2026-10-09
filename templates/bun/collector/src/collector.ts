@@ -23,16 +23,16 @@ export const collector: CollectorDefinition<Settings> = {
   version: pkg.version,
   description: "{{ .Name }}: feeds the catalog from a system of record",
 
-  // The ingest source this collector feeds. Its id defaults to the package
-  // name; set NP_COLLECTOR_SOURCE_ID to run one deployment per environment.
+  // The ingest source this collector feeds. Its slug defaults to the package
+  // name; set NP_COLLECTOR_SOURCE_SLUG to run one deployment per environment.
   source: {
-    kind: "inventory",
+    type: "inventory",
     name: "{{ .Name }}",
     // A snapshot that would delete half the source or more is refused.
     maxDeleteRatio: 0.5,
   },
 
-  // How each record kind becomes catalog entities. Evaluated by
+  // How each record type becomes catalog entities. Evaluated by
   // catalog-ingest-api; `data` must satisfy the target specification's schema.
   // Returning null filters the record out.
   mappings: {
@@ -61,7 +61,7 @@ export const collector: CollectorDefinition<Settings> = {
     const entries = JSON.parse(await readFile(ctx.settings.inventoryFile, "utf-8")) as InventoryEntry[];
     ctx.log.detail(`${entries.length} entries in ${ctx.settings.inventoryFile}`);
     for (const entry of entries) {
-      yield { kind: "service", payload: entry };
+      yield { type: "service", payload: entry };
     }
   },
 
