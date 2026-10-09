@@ -12,9 +12,11 @@ You write two things:
   guards: an empty snapshot, or one that would delete too much, deletes
   nothing). A snapshot that throws is aborted and deletes nothing.
 - **`mappings`** — per record type, an expression (JSONata, jq or CEL) that
-  turns a raw record into a catalog entity `{ id, data }`. catalog-ingest-api
-  evaluates it, validates `data` against the target specification and writes
-  only what changed.
+  turns a raw record into a catalog entity `{ id, data }`, and where it is
+  written: a **target** (a backend the platform configured; `catalog`, the
+  default, is today the only one) and a **type** of it, by slug (`typeSlug`:
+  for the catalog, a specification's slug). catalog-ingest-api evaluates it,
+  validates `data` against the type's schema and writes only what changed.
 
 Optionally, **`watch`** streams changes as they happen; snapshots still run on
 schedule and reconcile anything it missed.
@@ -24,8 +26,8 @@ schedule and reconcile anything it missed.
 - [mise](https://mise.jdx.dev) (`brew install mise`)
 - Docker (for the image)
 - A catalog-ingest-api URL and a nullplatform API key for real runs
-- The target specification in the catalog. The example writes to
-  `inventory-service`:
+- The catalog specification the mapping's `typeSlug` names. The example
+  writes to `inventory-service`:
 
   ```json
   {
@@ -44,6 +46,10 @@ schedule and reconcile anything it missed.
     }
   }
   ```
+
+The mapping names the type by slug, not id, so the same collector runs in
+every organization: each has its own id for `inventory-service`, which
+catalog-ingest-api resolves with the collector's credentials.
 
 Optional properties are nullable (`repository` above): when an entry loses one,
 the collector's write clears it. The catalog merges writes, so a non-nullable

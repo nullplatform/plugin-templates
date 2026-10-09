@@ -28,14 +28,19 @@ mise.toml                tasks: test, dev, once, describe, build:image, run, pub
 1. Replace `snapshot` in `src/collector.ts` with your system of record: yield
    one `{ type, payload }` per object it holds. Keep payloads raw — shaping
    belongs in the mapping.
-2. Write one mapping per record type. It must return `{ id, data }` (a list, or
-   `null` to skip the record). `data` must satisfy the target specification,
-   primary key included. Declare optional properties nullable in the
-   specification: a field that disappears from your mapping is then cleared
-   (written as null); a non-nullable one keeps its last value, because the
-   catalog merges writes. Relations to other entities: write the target's
-   external id under the foreign-key alias; declare such relations
-   `strict: false` with an explicit `alias: "<x>_id"` in the specification.
+2. Write one mapping per record type. It names where it writes: a `target`
+   (a backend the platform configured; default `"catalog"`, today the only
+   one) and a type of it by slug, `typeSlug` (for the catalog, a
+   specification's slug; by slug because each organization has its own ids).
+   A mapping's target cannot change once it exists. The expression must
+   return `{ id, data }` (a list, or `null` to skip the record). `data` must
+   satisfy the type's schema, primary key included. Declare optional
+   properties nullable in the specification: a field that disappears from
+   your mapping is then cleared (written as null); a non-nullable one keeps
+   its last value, because the catalog merges writes. Relations to other
+   entities: write the related entity's external id under the foreign-key
+   alias; declare such relations `strict: false` with an explicit
+   `alias: "<x>_id"` in the specification.
 3. Add a test that runs `runSnapshot` against `InMemoryIngest` and one that
    evaluates the mapping on a sample payload.
 4. `mise run test`, then `mise run dev` (in-memory) or `mise run once` (real API).

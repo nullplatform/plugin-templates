@@ -33,12 +33,16 @@ export const collector: CollectorDefinition<Settings> = {
   },
 
   // How each record type becomes catalog entities. Evaluated by
-  // catalog-ingest-api; `data` must satisfy the target specification's schema.
-  // Returning null filters the record out.
+  // catalog-ingest-api; `data` must satisfy the schema of the type it writes
+  // to. Returning null filters the record out.
   mappings: {
     service: {
       engine: "jsonata",
-      targetSlug: "inventory-service",
+      // Where the entities are written: a target (a backend the platform
+      // configured; "catalog" is the default and today the only one) and a
+      // type of it, by slug (for the catalog, a specification's slug).
+      target: "catalog",
+      typeSlug: "inventory-service",
       expression: `tier = "retired" ? null : {
         "id": name,
         "data": {
