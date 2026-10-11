@@ -1,0 +1,64 @@
+[tools]
+bun = "latest"
+
+# Install runs on demand and is the root of the task dependency graph.
+[tasks.install]
+description = "Install dependencies"
+run = "bun install"
+sources = ["package.json", "bun.lock"]
+
+[tasks.test]
+description = "Run tests"
+depends = ["install"]
+run = "bun run test"
+
+[tasks.describe]
+description = "Print the collector manifest"
+depends = ["install"]
+run = "bun run describe"
+
+# Long-running against an in-memory ingest: prints what it would send, sends
+# nothing. Set NP_INGEST_API_URL (+ NP_INGEST_TOKEN or NP_API_KEY) to feed a
+# real catalog-ingest-api instead.
+[tasks.dev]
+description = "Run the collector locally with hot reload (in-memory ingest unless NP_INGEST_API_URL is set)"
+depends = ["install"]
+run = "bun run dev"
+
+# One real snapshot against the catalog-ingest-api in NP_INGEST_API_URL.
+[tasks.once]
+description = "Take one snapshot and print its result"
+depends = ["install"]
+run = """
+set -eu
+: "${NP_INGEST_API_URL:?set NP_INGEST_API_URL}"
+bun run once
+"""
+
+[tasks.build]
+description = "Compile the collector to a standalone executable"
+depends = ["install"]
+run = "bun run build"
+sources = ["src/**/*.ts", "package.json", "bun.lock"]
+outputs = ["dist/{{ .Slug }}"]
+
+[tasks."build:image"]
+description = "Build the collector image"
+run = "docker build -t {{ .Slug }}:dev ."
+
+# Run the image the way production does: long-lived, schedule + watch.
+[tasks.run]
+description = "Run the collector image locally against NP_INGEST_API_URL"
+depends = ["build:image"]
+run = """
+set -eu
+: "${NP_INGEST_API_URL:?set NP_INGEST_API_URL}"
+: "${NP_API_KEY:?set NP_API_KEY}"
+docker run --rm --name {{ .Slug }} -e NP_INGEST_API_URL -e NP_API_KEY \
+  -e NP_COLLECTOR_SOURCE_SLUG -e NP_COLLECTOR_SOURCE_NRN -e NP_COLLECTOR_INTERVAL_SECONDS {{ .Slug }}:dev
+"""
+
+# Build + push the image to $NP_PUSH_REGISTRY and print its digest ref.
+[tasks."publish:image"]
+description = "Build + push the collector image; prints its digest ref"
+run = "bash scripts/publish-image.sh"

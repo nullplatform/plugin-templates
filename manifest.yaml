@@ -38,6 +38,14 @@ categories:
         prompt: Plugin name
         hint: "human-readable — e.g. 'Postgres', 'Redis', 'Datadog', 'CloudFront CDN' (slug is auto-derived)"
 
+  - type: collector
+    name: Catalog collector
+    description: Keep the catalog in sync with a system of record — Kubernetes clusters, GitHub orgs, cloud accounts, CMDB exports — through catalog-ingest-api.
+    variables:
+      - name: Name
+        prompt: Collector name
+        hint: "human-readable — e.g. 'Kubernetes Collector', 'GitHub Org Collector', 'CMDB Sync' (slug is auto-derived)"
+
 sdks:
   - id: bun
     name: Bun
@@ -91,3 +99,19 @@ templates:
       - "np package dev             # local dev with hot reload"
       - "np package publish         # register + push the worker image"
       - "np package run             # serve real platform actions from this machine"
+
+  - id: collector-bun
+    name: Catalog collector (TypeScript/Bun)
+    description: Feed the catalog from a system of record — snapshots on a schedule, deltas from a watch, mappings in JSONata/jq/CEL.
+    path: bun/collector
+    type: collector
+    sdk: bun
+    post_init:
+      - "mise trust mise.toml"
+      - "mise install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "mise run test             # snapshot + mapping tests, no network"
+      - "mise run dev              # run the schedule against an in-memory ingest (sends nothing)"
+      - "mise run once             # one real snapshot (needs NP_INGEST_API_URL + NP_API_KEY)"
+      - "mise run publish:image    # build + push the collector image"

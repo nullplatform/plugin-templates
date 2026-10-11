@@ -1,0 +1,23 @@
+{
+  "api": {
+    "url": "NP_API_URL",
+    "key": "NP_API_KEY"
+  },
+  "agent": {
+    "mode": "NP_AGENT_PLUGIN",
+    "actionContext": "NP_ACTION_CONTEXT"
+  },
+  "ingest": {
+    "url": "NP_INGEST_API_URL",
+    "token": "NP_INGEST_TOKEN"
+  },
+  "collector": {
+    "sourceSlug": "NP_COLLECTOR_SOURCE_SLUG",
+    "sourceNrn": "NP_COLLECTOR_SOURCE_NRN",
+    "sourceName": "NP_COLLECTOR_SOURCE_NAME",
+    "intervalSeconds": "NP_COLLECTOR_INTERVAL_SECONDS",
+    "settings": {
+      "inventoryFile": "INVENTORY_FILE"
+    }
+  }
+}
