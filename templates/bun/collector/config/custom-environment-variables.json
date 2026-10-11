@@ -13,6 +13,7 @@
   },
   "collector": {
     "sourceSlug": "NP_COLLECTOR_SOURCE_SLUG",
+    "sourceNrn": "NP_COLLECTOR_SOURCE_NRN",
     "sourceName": "NP_COLLECTOR_SOURCE_NAME",
     "intervalSeconds": "NP_COLLECTOR_INTERVAL_SECONDS",
     "settings": {

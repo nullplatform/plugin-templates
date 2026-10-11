@@ -84,6 +84,7 @@ Exit codes of `--once`: `0` completed, `2` a guard tripped (nothing deleted),
 | `NP_API_KEY` | nullplatform API key, exchanged for tokens |
 | `NP_INGEST_TOKEN` | a ready bearer token instead (local API) |
 | `NP_COLLECTOR_SOURCE_SLUG` | the slug of the ingest source this deployment feeds (default: `{{ .Slug }}`) |
+| `NP_COLLECTOR_SOURCE_NRN` | where that source lives: the NRN the API key is granted at, e.g. `organization=1:account=2` (default: the organization's root) |
 | `NP_COLLECTOR_SOURCE_NAME` | its display name |
 | `NP_COLLECTOR_INTERVAL_SECONDS` | seconds between snapshots (default: `collector.intervalSeconds`) |
 | `INVENTORY_FILE` | the example's own setting (`collector.settings.inventoryFile`) |

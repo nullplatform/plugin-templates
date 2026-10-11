@@ -55,7 +55,9 @@ mise.toml                tasks: test, dev, once, describe, build:image, run, pub
   newest observation of an entity wins, whatever order inputs arrive in.
 - **The source slug is identity.** Entities belong to the source that wrote them;
   only it can delete them. Changing `NP_COLLECTOR_SOURCE_SLUG` starts a new
-  source.
+  source. It lives at `NP_COLLECTOR_SOURCE_NRN` (the NRN the API key is granted
+  at), set once: its settings are the definition's when it is created, and its
+  administrators' after that.
 - **Never set `NP_MODE=dev` in the image** — it switches to the in-memory ingest
   and sends nothing.
 - Stdout is reserved for results (`--once` prints JSON); logs go to stderr via
