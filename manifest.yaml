@@ -1,19 +1,5 @@
 version: 1
 
-# Templates registry for `np package init`.
-#
-# Two orthogonal dimensions:
-#   1. CATEGORY — what the plugin is (the problem it solves). First picker step.
-#   2. SDK      — how it's implemented (runtime/language). Second picker step.
-#
-# `templates` is the sparse (category, sdk) matrix pointing at templates/<path>.
-#
-# Prompts (category `variables`) ask ONLY for what the scaffold can't derive:
-# the human name (the slug is auto-derived from it). Everything else — scope
-# category/provider, agent routing — is declared in code via the SDK
-# (service()/scope() in src/resources.ts), the single source of truth, and
-# changed there.
-
 categories:
   - type: scope
     name: Deployment target
