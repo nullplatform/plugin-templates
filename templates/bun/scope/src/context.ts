@@ -4,7 +4,7 @@
  * Overloaded: scope actions get ScopeContext, deployment actions get DeploymentContext.
  */
 
-import type { ScopeActionInput, DeploymentActionInput, ScopeAttributes } from "./index";
+import type { ScopeActionInput, DeploymentActionInput, ScopeAttributes } from "./scope";
 
 export interface ScopeContext {
   scopeId: string;

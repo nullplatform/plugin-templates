@@ -1,5 +1,5 @@
 import { workflow } from "@nullplatform/workflow";
-import type { ScopeActionInput } from "../index";
+import type { ScopeActionInput } from "../scope";
 import { buildContext } from "../context";
 
 export const createScope = workflow<ScopeActionInput>("{{ .Slug }}:create-scope")

@@ -11,7 +11,7 @@
     "describe": "bun src/index.ts --describe"
   },
   "dependencies": {
-    "@nullplatform/plugin": "^0.0.3",
+    "@nullplatform/plugin": "^0.2.0",
     "@nullplatform/workflow": "^0.0.5",
     "@nullplatform/workflow-engine-in-memory": "^0.0.5"
   },

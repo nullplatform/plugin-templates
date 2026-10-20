@@ -1,4 +1,4 @@
-import { describe, test, expect } from "@nullplatform/plugin-sdk/testing";
+import { describe, test, expect } from "@nullplatform/plugin/testing";
 
 describe("{{ .Name }} plugin", () => {
   test("placeholder", () => {

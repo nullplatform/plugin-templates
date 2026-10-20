@@ -1,18 +1,13 @@
-import { describe, test, expect } from "@nullplatform/plugin-sdk/testing";
-import { resolve } from "path";
+import { describe, test, expect } from "@nullplatform/plugin/testing";
+import pkg from "../package.json";
+import scope from "../src/scope";
 
 describe("{{ .Name }} plugin", () => {
-  test("--describe outputs valid plugin manifest", async () => {
-    const proc = Bun.spawn(
-      ["bun", "run", resolve(import.meta.dir, "../src/index.ts"), "--describe"],
-      { stdout: "pipe", stderr: "pipe" },
-    );
-    const output = await new Response(proc.stdout).text();
-    await proc.exited;
-    const manifest = JSON.parse(output);
+  test("the manifest declares the scope and its actions", () => {
+    const manifest = scope.manifest() as Record<string, any>;
 
     expect(manifest.name).toBe("{{ .Slug }}");
-    expect(manifest.version).toBe("0.1.0");
+    expect(manifest.version).toBe(pkg.version);
     expect(manifest.schema.properties.enabled).toBeDefined();
     expect(manifest.actions["create-scope"]).toBeDefined();
     expect(manifest.actions["delete-scope"]).toBeDefined();

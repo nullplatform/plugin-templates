@@ -1,5 +1,5 @@
 import { workflow } from "@nullplatform/workflow";
-import type { DeploymentActionInput } from "../index";
+import type { DeploymentActionInput } from "../scope";
 import { buildContext } from "../context";
 
 export const startInitial = workflow<DeploymentActionInput>("{{ .Slug }}:start-initial")
