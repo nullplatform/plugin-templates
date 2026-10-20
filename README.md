@@ -37,8 +37,9 @@ plugin-templates/
 ## Adding a template
 
 1. Create a directory under `templates/<sdk>/<category>/` with the source files
-2. Use `{{ .Name }}` and `{{ .Slug }}` in file contents and names (everything else — scope category/provider, channel routing/sources — is declared in code via the SDK, the single source of truth)
+2. Use `{{ .Name }}` and `{{ .Slug }}` in file contents and `__SLUG__` in file paths (everything else — scope category/provider, channel routing/sources — is declared in code via the SDK, the single source of truth)
 3. Register it in `manifest.yaml` under `templates:` with the matching `type` and `sdk`
+4. Build on the released SDK's package layer (`@nullplatform/plugin/package`, pinned to an exact version): the declaration, its handlers and each action's `plans` in code, the tracer built in `src/package.ts`
 4. Add any new variables to the category definition in `manifest.yaml`
 5. Include a `README.md` and an `AGENTS.md` — every scaffold ships docs for people and for AI assistants (Claude Code, Cursor, …)
 

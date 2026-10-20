@@ -3,10 +3,10 @@
  * exported to that application (here, one environment variable).
  */
 
-import { ActionError, type ContextOf } from "@nullplatform/plugin/package";
-import type { connect } from "./resources";
+import { ActionError } from "@nullplatform/plugin/package";
+import type { LinkContext as Context } from "./schema";
 
-type Context = ContextOf<typeof connect>;
+const userOf = (ctx: Context) => `np-${String(ctx.link?.id ?? "")}`;
 
 /** Grant the application access. Returns the link's exported attributes. */
 export async function create(ctx: Context): Promise<{ connection_url: string }> {
@@ -16,10 +16,11 @@ export async function create(ctx: Context): Promise<{ connection_url: string }> 
   if (!endpoint) {
     throw ActionError.retry("SERVICE_NOT_READY", "the service has no endpoint yet; link again once it is created");
   }
-  const user = `np-${String(ctx.link?.id ?? "")}`;
-  const url = await ctx.step(`credentials for ${user}`, async () => {
+  const user = userOf(ctx);
+  const url = await ctx.step("grant access", async (step) => {
     // Replace: issue a credential scoped to this link (ctx.link.id) on the
     // real dependency and build the URL the application will use.
+    step.explain({ what: `${user} can reach ${endpoint}.`, why: "Each linked application gets its own credential, revoked with the link." });
     return `tcp://${user}@${endpoint}`;
   });
   ctx.log.ok(`${user} can reach ${endpoint}`);
@@ -34,7 +35,8 @@ export async function update(ctx: Context): Promise<Record<string, never>> {
 
 /** Revoke the access. The service itself is untouched. */
 export async function remove(ctx: Context): Promise<void> {
-  await ctx.step(`revoke np-${String(ctx.link?.id ?? "")}`, async () => {
+  await ctx.step("revoke access", async (step) => {
     // Replace: remove what `create` issued for this link.
+    step.explain({ what: `Revoked ${userOf(ctx)}.` });
   });
 }

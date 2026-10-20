@@ -8,12 +8,15 @@
   "scripts": {
     "describe": "bun src/main.ts --describe",
     "test": "bun test",
-    "build": "bun build --compile src/main.ts --outfile dist/{{ .Slug }}"
+    "build": "bun build --compile src/main.ts --outfile dist/{{ .Slug }}",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@nullplatform/plugin": "0.1.0-alpha.1"
+    "@nullplatform/plugin": "0.1.9",
+    "@nullplatform/tracing": "0.0.16"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.0"
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.6.0"
   }
 }

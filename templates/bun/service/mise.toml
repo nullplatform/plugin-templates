@@ -23,12 +23,26 @@ description = "Run the tests: every action in-process through pkg.run(), no plat
 depends = ["install"]
 run = "bun test"
 
+[tasks.typecheck]
+description = "Type-check the package"
+depends = ["install"]
+run = "bunx tsc --noEmit -p ."
+
 [tasks.build]
 description = "Compile the worker to a single binary"
 depends = ["install"]
 run = "bun build --compile src/main.ts --outfile dist/{{ .Slug }}"
 sources = ["src/**/*.ts", "package.json", "bun.lock"]
 outputs = ["dist/{{ .Slug }}"]
+
+[tasks."build:all"]
+description = "Cross-compile the worker for every release target"
+depends = ["install"]
+run = """
+bun build --compile --target=bun-linux-x64-musl   src/main.ts --outfile dist/{{ .Slug }}-linux-x64
+bun build --compile --target=bun-linux-arm64-musl src/main.ts --outfile dist/{{ .Slug }}-linux-arm64
+bun build --compile --target=bun-darwin-arm64     src/main.ts --outfile dist/{{ .Slug }}-darwin-arm64
+"""
 
 # `np package dev` → the browser dev UI: every action from the manifest, the
 # notification the platform would send as the editor's starting point, live

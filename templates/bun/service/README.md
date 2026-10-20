@@ -9,10 +9,11 @@ TypeScript function, and one `np package publish` registers all of it.
 
 | File | What it is |
 |---|---|
-| `src/resources.ts` | the service and its link: name, selectors, the attributes the platform renders |
+| `src/schema.ts` | the attributes the platform renders: the service's inputs and outputs, the link's exported values |
+| `src/resources.ts` | the service and its link: name, selectors, the handler of every action and each action's **plan** |
 | `src/service.ts` | `create` / `update` / `delete` of the service |
 | `src/connect.ts` | `create` / `update` / `delete` of the `connect` link: what a linked application receives |
-| `src/package.ts` | `definePackage`: resources + handlers (name, version and description come from `package.json`) |
+| `src/package.ts` | `definePackage` and the tracer (name, version and description come from `package.json`) |
 | `test/` | one `pkg.run()` per action: status, results, steps, logs |
 
 The placeholders are the `size` input and the `endpoint` output of the service,
@@ -22,6 +23,7 @@ the `connection_url` the link exports, and the body of every `ctx.step(...)`.
 
 ```bash
 mise run test        # every action in-process, no platform
+mise run typecheck
 mise run describe    # the manifest np package publish sends
 np package dev       # browser dev UI: pick an action, edit the notification, run it
 ```

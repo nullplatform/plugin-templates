@@ -5,24 +5,28 @@
 # declares. The SDK comes from npm through package.json.
 #
 # At runtime the agent injects NP_GRPC_LISTEN (the port), the mTLS material
-# (NP_WORKER_TLS_*) and NP_API_KEY. Never set NP_MODE=dev here: it switches
-# the SDK to the in-memory platform client and no lifecycle is ever reported.
+# (NP_WORKER_TLS_*), NP_API_KEY and, when tracing is on, NP_TRACING_URL. Never
+# set NP_MODE=dev here: it switches the SDK to the in-memory platform client
+# and no lifecycle is ever reported.
 
-FROM oven/bun:1-alpine AS build
+ARG BUN_IMAGE=oven/bun:1-alpine
+ARG RUNTIME_IMAGE=alpine:3.20
+
+# The build stage runs on the builder's own architecture and cross-compiles:
+# bun targets any platform, so a multi-arch buildx emulates nothing here.
+FROM --platform=$BUILDPLATFORM ${BUN_IMAGE} AS build
+ARG TARGETARCH
 WORKDIR /opt/{{ .Slug }}
 COPY package.json bun.lock* ./
-RUN bun install
+RUN bun install --production
 COPY src ./src
-# Compile for the image's own architecture (buildkit sets TARGETARCH; bun
-# names amd64 "x64"). bun cross-compiles, so a multi-arch buildx needs no
-# emulation for this step.
-ARG TARGETARCH
+# bun names amd64 "x64".
 RUN arch=$([ "${TARGETARCH:-amd64}" = "amd64" ] && echo x64 || echo "$TARGETARCH") \
     && bun build --compile --target="bun-linux-${arch}-musl" src/main.ts --outfile /out/{{ .Slug }}
 
-FROM alpine:3.20
+FROM ${RUNTIME_IMAGE}
 # The bun musl binary links libstdc++/libgcc dynamically. The worker runs as
-# an unprivileged user.
+# an unprivileged user. Add here the CLIs your handlers drive (kubectl, aws…).
 RUN apk add --no-cache ca-certificates libstdc++ libgcc \
     && addgroup -S -g 65532 worker \
     && adduser -S -u 65532 -G worker -h /home/worker worker

@@ -63,7 +63,7 @@ templates:
 
   - id: simple-bun
     name: Command handler (TypeScript/Bun)
-    description: Run code when the platform dispatches a command — health checks, migrations, notifications, glue.
+    description: One execute() component on the SDK's package layer — answer any command the agent hands over (health checks, migrations, live reads), the answer in the same response; tests are one pkg.execute() call.
     path: bun/simple
     type: simple
     sdk: bun
@@ -72,10 +72,9 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "np package test            # run tests"
-      - "np package dev             # local dev with hot reload"
-      - "np package publish         # register + push the worker image"
-      - "np package run             # serve real platform actions from this machine"
+      - "mise run test              # every command in-process, no platform"
+      - "np package run             # a real agent on this machine spawns the worker"
+      - "np package publish         # push the worker image + register the package"
 
   - id: service-bun
     name: Service / dependency (TypeScript/Bun)
