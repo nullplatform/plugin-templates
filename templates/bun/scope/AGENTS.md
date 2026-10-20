@@ -1,54 +1,82 @@
 # AGENTS.md — {{ .Name }}
 
-Guidance for AI agents / new contributors working in this **scope** package.
+Rules for AI assistants and new contributors working in this package.
 
 ## What this is
 
-A nullplatform scope plugin: a deployment target defined with
-`defineScope({...})` from `@nullplatform/plugin/scope`. It's compiled to a
-standalone binary and run as a **gRPC worker** — the controlplane agent spawns
-it (a pod in Kubernetes, a container in Docker) and streams actions to it. You
-write action handlers; the SDK owns the gRPC server, action routing, lifecycle
-(in_progress → success/failed), and `--describe`.
+A nullplatform **package**: the scope `{{ .Slug }}` (a deployment target) and
+its scope type, declared as one value with `@nullplatform/plugin/package`,
+with one handler function per action. `src/main.ts` is `pkg.start()`:
+`--describe` prints the manifest, an action in `NP_ACTION_CONTEXT` runs once,
+otherwise the gRPC server serves the agent. `Dockerfile` compiles it to one
+binary.
 
 ## File map
 
 ```
-src/
-  index.ts          defineScope: schema, uiSchema, action → handler wiring
-  actions/*.ts      one file per action (create-scope, start-initial, log:read, …)
-Dockerfile          lean worker image (the agent spawns this)
-mise.toml           tasks: dev, test, build:image, run, publish:image
-config/             node-config env mapping
+src/schema.ts      the attributes schema, the console form (uiSchema), the Context type
+src/resources.ts   scope({ …, scopeType, telemetry, plans, actions }): everything published
+src/scope.ts       create-scope / delete-scope
+src/deployment.ts  start-initial / start-blue-green / switch-traffic / finalize-blue-green / rollback-deployment / delete-deployment
+src/logs.ts        log:read
+src/package.ts     definePackage({ name, version, description, components, tracing })
+src/main.ts        pkg.start()
+test/*.test.ts     pkg.run(resource, action, input, context)
+Dockerfile         worker image, non-root; entrypoint /app/packages/{{ .Slug }}/entrypoint
+mise.toml          describe · test · typecheck · build · dev · build:image · run · publish:image
 ```
 
-## How to add / change an action
+## Rules
 
-1. Add a handler in `src/actions/<name>.ts`: `async (ctx) => result` — ctx carries `scopeId`/`deploymentId`, `attributes`, `log`, `emit`, and `state`.
-2. Wire it in `src/index.ts` under `actions` with its `input`/`output` schema.
-3. `mise run describe` to confirm it's in the manifest; `mise run test`.
+- **Declarations use the service API's own fields, in camelCase.** `scope()`
+  takes what `POST /service_specification` takes (`assignableTo`,
+  `selectors.subCategory`, …) plus `actions`, `scopeType`, `telemetry`,
+  `assetType` and `plans`. The JSON schema travels verbatim: property names and
+  keywords (`visibleOn`, `editableOn`, `order`, `readOnly`) are never converted.
+- **The console form is `required`.** The scope form shows exactly the
+  properties listed in `schema.required`, laid out by `uiSchema`. Give every
+  input a default.
+- **Results must fit the schema.** A deployment action returns only the
+  schema's read-only outputs (`visibleOn: ["read"]`); the platform rejects
+  anything else and the action never completes. Return nothing when there is
+  nothing to report.
+- **Every action has a plan, in stages.** `plans` in `resources.ts` names the
+  steps each action runs, grouped into stages with titles. Step keys are the
+  exact `ctx.step` names. The console's deployment timeline shows one station
+  per stage, and a flat plan (no groups) leaves the page on the plain view.
+- **Steps tell what happened.** `ctx.step(name, (step) => …)`: call
+  `step.explain({ what, why })` with the facts (what was created, where it
+  answers), `step.link(...)` for somewhere to go, `step.output(name, value)`
+  for data worth keeping. `ctx.trace.explain(...)` is the run's own one-line
+  story. All silent when tracing is off.
+- **A scope provisions nothing on create.** `create-scope` builds the target's
+  footprint; the workload lands on the deployment actions.
+- **Traffic is reported, not returned.** `switch-traffic` calls
+  `ctx.deployment.reportTraffic(ctx.weight)`; the platform sends the weight as
+  `desired_traffic` and does not read it off the results.
+- **Data actions return exactly their shape.** `log:read` returns
+  `{ results: [{ message, datetime }] }` and nothing else.
+- **`ctx.params` is the input**: the scope's attributes merged with the
+  action's parameters. `ctx.scopeId`, `ctx.deploymentId`, `ctx.assetUrl` and
+  `ctx.weight` are the platform-owned values, already mapped.
+- **Fail with a name.** `throw new ActionError("CODE", message)`;
+  `ActionError.retry(...)` when the platform may try again. Any other throw is
+  reported as `EXECUTION_ERROR`.
+- **No `console.log` inside a handler** — `ctx.log.*` is the action's live log,
+  and a data action's stdout is its answer.
+- **Tests are `pkg.run`.** `await pkg.run(target, Actions.START_INITIAL, { scope_id, deployment_id }, { scope, service })`
+  returns `{ status, results, data, error, logs, steps, traffic }`.
+- **Handlers are idempotent.** The platform retries; a second run must find the
+  work done and succeed.
+- **The tracer is built in `package.ts`.** A compiled worker cannot resolve the
+  SDK's lazy import of `@nullplatform/tracing`; keep the static import.
+- Never set `NP_MODE=dev` in the image: it switches the SDK to the in-memory
+  platform client and the worker never reports lifecycle.
 
-## Rules that matter (don't break these)
+## Verify
 
-- **`emit({ stdout })` is the action logger** — lines post to the service action
-  and show live in the UI. Use it for progress. It is NOT the return value.
-- **Data-fetch actions** (`log:read`, `instance:data`, anything under
-  `log:`/`metric:`/`instance:`) must **return exactly the result shape** the
-  platform validates (e.g. `{ results: [{ message, datetime }] }`) and must NOT
-  write anything else to stdout — the platform reads stdout as that JSON. Don't
-  `console.log` in a data-fetch handler; the SDK routes `emit` to the log API
-  only for these, never the stdout stream.
-- **A scope provisions nothing on create.** The workload is created by the
-  deployment actions (`start-initial` / `start-blue-green`). Keep `create-scope`
-  side-effect free.
-- **Never set `NP_MODE=dev` in the image** — it switches the SDK to the in-memory
-  client and the worker never reports lifecycle (scopes hang).
-- The worker reaches the cluster (if it needs to) with its in-cluster
-  ServiceAccount; the agent injects TLS, the API key, and the cluster CA trust.
-  Don't hand-roll credentials.
-
-## Run / test
-
-- `mise run test` — unit tests.
-- `mise run dev` — dev UI against fixtures (no platform calls).
-- `np package run` — real local run: dockerized agent spawns this worker. Needs `NP_API_KEY`.
+```bash
+mise run test
+mise run typecheck
+mise run describe
+```

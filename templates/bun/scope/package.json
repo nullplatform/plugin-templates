@@ -1,25 +1,22 @@
 {
-  "name": "@nullplatform/scope-{{ .Slug }}",
-  "version": "0.0.1",
+  "name": "{{ .Slug }}",
+  "version": "0.1.0",
+  "description": "{{ .Name }}, a deployment target on nullplatform",
+  "private": true,
   "type": "module",
-  "main": "src/index.ts",
+  "main": "src/main.ts",
   "scripts": {
-    "dev": "bunx @nullplatform/plugin-dev-ui --plugin .",
+    "describe": "bun src/main.ts --describe",
     "test": "bun test",
-    "build": "bun build --compile ./src/index.ts --outfile dist/{{ .Slug }}",
-    "describe": "bun src/index.ts --describe",
-    "publish:image": "bash scripts/publish-image.sh"
+    "typecheck": "tsc --noEmit -p .",
+    "build": "bun build --compile src/main.ts --outfile dist/{{ .Slug }}"
   },
   "dependencies": {
-    "@nullplatform/plugin": "0.0.4",
-    "@nullplatform/workflow": "^0.0.5",
-    "@nullplatform/workflow-engine-in-memory": "^0.0.5",
-    "config": "^4.4.2"
+    "@nullplatform/plugin": "0.1.9",
+    "@nullplatform/tracing": "0.0.16"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.0"
-  },
-  "trustedDependencies": [
-    "@grpc/grpc-js"
-  ]
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.6.0"
+  }
 }

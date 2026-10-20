@@ -1,9 +1,10 @@
 name: release
 
-# Publish this scope package to nullplatform when you cut a GitHub Release.
-# `np package publish` builds + pushes the lean worker image tagged with the
-# release version (mise `publish:image`) and registers the scope type, actions,
-# channel, and the package revision pinning that image.
+# Publish this package to nullplatform when you cut a GitHub Release.
+# `np package publish` builds + pushes the worker image tagged with the release
+# version (the mise `publish:image` task) and registers what the manifest
+# declares — specifications, links, scope types, handlers — plus the package
+# revision pinning that image.
 #
 # Works out of the box: the image goes to this repo's GitHub Container Registry
 # (ghcr.io/<owner>/<repo>) using the built-in GITHUB_TOKEN — no extra secrets.
@@ -30,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # mise provides bun/oras and runs the package's own tasks.
+      # mise provides bun and runs the package's own tasks.
       - uses: jdx/mise-action@v2
       # buildx + QEMU so publish:image can build the multi-arch (amd64+arm64) worker.
       - uses: docker/setup-qemu-action@v3

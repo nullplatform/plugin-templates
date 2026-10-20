@@ -1,49 +1,51 @@
 # {{ .Name }}
 
-A nullplatform **custom command** plugin — the low-level path: raw
-`createPlugin` from `@nullplatform/plugin`, no scope/service scaffolding. The
-platform dispatches a command and your `execute(req)` runs it. Compiled to a
-standalone binary and run as a gRPC worker the controlplane agent spawns.
+A nullplatform **command handler** as a package: one `execute()` component
+from `@nullplatform/plugin/package` answers any document the agent hands over.
+Compiled to one binary and run as the worker the controlplane agent spawns.
 
-Use this for health checks, migrations, notifications, data sync — anything the
-agent should run on your behalf that isn't a scope or a service.
+Use it for anything that isn't a scope or a service: health checks,
+migrations, notifications, data sync — and live reads. A caller (the console,
+a UI plugin, a workflow) sends `POST /controlplane/agent_command` with the
+package and a document; what `execute()` returns comes back **in the same
+response**, so a `list` or `get` answers with real data, no catalog involved.
 
-## Prerequisites
+## What to edit
 
-- [mise](https://mise.jdx.dev) (`brew install mise`)
-- Docker (for `run` / building the worker image)
-- The `np` CLI — `curl https://cli.nullplatform.com/install.sh | sh`
-- `NP_API_KEY` in your environment
+| File | What it is |
+|---|---|
+| `src/handler.ts` | `handle(ctx)`: reads the document (`ctx.payload`), dispatches on `action`, returns the answer |
+| `src/package.ts` | `definePackage({ components: [execute(handle)] })` and the tracer |
+| `src/main.ts` | `--describe` (identity and agent routing for `np package publish`), else `pkg.start()` |
+| `test/` | one `pkg.execute(document)` per command: status, data, error, steps |
 
 ## Develop
 
 ```bash
-mise run test       # run the test suite
-mise run describe   # print the plugin manifest (name/version/command_types)
+mise run test        # every command in-process, no platform
+mise run typecheck
+mise run describe    # the manifest np package publish reads
 ```
 
-## Run it locally
+## Call it
 
-`np package run` (or `mise run run`) runs it like production: a controlplane
-agent in Docker spawns this package's worker container and streams commands to
-it over gRPC/mTLS.
+```bash
+curl -X POST https://api.nullplatform.com/controlplane/agent_command \
+  -H "Authorization: Bearer $NP_TOKEN" -H 'content-type: application/json' \
+  -d '{"nrn":"organization=…","selector":{"package":"{{ .Slug }}"},
+       "command":{"type":"package-exec","data":{"package":"{{ .Slug }}",
+         "environment":{"NP_ACTION_CONTEXT":"{\"action\":\"hello\",\"name\":\"Ada\"}"}}}}'
+```
+
+## Run and publish
 
 ```bash
 export NP_API_KEY=...
-mise run run
+np package run                                       # a real agent on this machine, tagged local:<you>, spawns the worker image
+np package publish --nrn organization=…:account=…   # build + push the image, register the package
 ```
 
-## What's here
-
-`src/index.ts` registers the manifest (`registerManifest`) and starts the plugin
-(`createPlugin({ execute }).start()`). `execute(req)` receives the command
-payload and returns `{ success, data }`. It also handles `--describe` (prints the
-manifest) so `np package publish` can read it.
-
-## Publish
-
-Cut a GitHub Release (or run the release workflow). CI builds the worker image,
-pushes it, and runs `np package publish`. Configure the `NULLPLATFORM_API_KEY`
-secret and `NP_NRN` variable. See `.github/workflows/release.yml`.
+Cutting a GitHub Release runs `.github/workflows/release.yml`, which publishes
+from CI (secret `NULLPLATFORM_API_KEY`, variable `NP_NRN`).
 
 New to the code? Read `AGENTS.md`.
