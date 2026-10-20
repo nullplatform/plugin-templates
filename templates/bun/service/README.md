@@ -1,42 +1,17 @@
 # {{ .Name }}
 
-A nullplatform **dependency service** — something applications need to run: a
-database, a cache, a queue — as a **package**. The service and its `connect`
-link are declared in code with `@nullplatform/plugin`, every action is a
-TypeScript function, and one `np package publish` registers all of it.
-
-## What to edit
+A nullplatform service: a dependency applications link to, such as a database or a queue.
 
 | File | What it is |
-|---|---|
-| `src/schema.ts` | the attributes the platform renders: the service's inputs and outputs, the link's exported values |
-| `src/resources.ts` | the service and its link: name, selectors, the handler of every action and each action's **plan** |
-| `src/service.ts` | `create` / `update` / `delete` of the service |
-| `src/connect.ts` | `create` / `update` / `delete` of the `connect` link: what a linked application receives |
-| `src/package.ts` | `definePackage` and the tracer (name, version and description come from `package.json`) |
-| `test/` | one `pkg.run()` per action: status, results, steps, logs |
-
-The placeholders are the `size` input and the `endpoint` output of the service,
-the `connection_url` the link exports, and the body of every `ctx.step(...)`.
-
-## Develop
+| --- | --- |
+| `src/schema.ts` | The service's inputs and outputs, and what a link exports |
+| `src/resources.ts` | The service, its `connect` link, their actions and steps |
+| `src/service.ts` | `create`, `update`, `delete` |
+| `src/connect.ts` | The link's `create`, `update`, `delete` |
+| `test/` | One test per action |
 
 ```bash
-mise run test        # every action in-process, no platform
-mise run typecheck
-mise run describe    # the manifest np package publish sends
-np package dev       # browser dev UI: pick an action, edit the notification, run it
+mise run test
+np package run                       # run it locally with a real agent
+np package publish --nrn <account>   # register it
 ```
-
-## Run and publish
-
-```bash
-export NP_API_KEY=...
-np package run                                       # a real agent on this machine, tagged local:<you>, spawns the worker image
-np package publish --nrn organization=…:account=…   # build + push the image, register the service and its link
-```
-
-Cutting a GitHub Release runs `.github/workflows/release.yml`, which publishes
-from CI (secret `NULLPLATFORM_API_KEY`, variable `NP_NRN`).
-
-New to the code? Read `AGENTS.md`.

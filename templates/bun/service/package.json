@@ -12,8 +12,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@nullplatform/plugin": "0.1.9",
-    "@nullplatform/tracing": "0.0.16"
+    "@nullplatform/plugin": "0.1.11"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",

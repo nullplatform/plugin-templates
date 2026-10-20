@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Build + push the lean worker image for amd64 + arm64 from the multi-stage
-# Dockerfile (it compiles the worker inside), and print registry/repo@sha256:<digest>
-# on stdout for `np package publish` to register. Build logs go to stderr.
-#
-# Version: $NP_VERSION (the release tag, v-stripped). Registry: $NP_PUSH_REGISTRY
-# (any registry you're `docker login`ed to). Needs docker buildx.
 set -eu
 
 registry="${NP_PUSH_REGISTRY:-}"

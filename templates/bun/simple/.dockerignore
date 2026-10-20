@@ -1,4 +1,3 @@
-# Only what the build needs goes into the image.
 .git
 .github
 node_modules
