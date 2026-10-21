@@ -21,7 +21,9 @@ try {
   if (flags.describe) {
     console.log(JSON.stringify(scope.manifest(), null, 2));
   } else if (flags.publish) {
-    if (!flags.nrn) throw new Error('usage: --publish --nrn "organization=123"');
+    if (!flags.nrn) {
+      throw new Error('usage: --publish --nrn "organization=123"');
+    }
     await scope.publish({ nrn: flags.nrn });
   } else if (process.env.NP_ACTION_CONTEXT && process.env.NP_AGENT_PLUGIN !== "np-agent-v1") {
     const { output, success } = await handle(scope, process.env.NP_ACTION_CONTEXT, { signal: stop.signal });
