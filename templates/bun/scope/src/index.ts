@@ -6,21 +6,23 @@
 //   bun src/index.ts --publish --nrn <nrn>   register the scope type on the platform
 //   NP_ACTION_CONTEXT=... bun src/index.ts   answer one action (how the agent execs the worker)
 //   NP_AGENT_PLUGIN=np-agent-v1 ...          serve the gRPC protocol (how the agent dials the worker)
+import { parseArgs } from "node:util";
 import { handle, serve } from "@nullplatform/plugin";
 import scope from "./scope";
 
-const argv = process.argv.slice(2);
 const stop = new AbortController();
 process.on("SIGTERM", () => stop.abort());
 process.on("SIGINT", () => stop.abort());
 
 try {
-  if (argv.includes("--describe")) {
+  const { values: flags } = parseArgs({
+    options: { describe: { type: "boolean" }, publish: { type: "boolean" }, nrn: { type: "string" } },
+  });
+  if (flags.describe) {
     console.log(JSON.stringify(scope.manifest(), null, 2));
-  } else if (argv.includes("--publish")) {
-    const nrn = argv[argv.indexOf("--nrn") + 1];
-    if (!argv.includes("--nrn") || !nrn) throw new Error('usage: --publish --nrn "organization=123"');
-    await scope.publish({ nrn });
+  } else if (flags.publish) {
+    if (!flags.nrn) throw new Error('usage: --publish --nrn "organization=123"');
+    await scope.publish({ nrn: flags.nrn });
   } else if (process.env.NP_ACTION_CONTEXT && process.env.NP_AGENT_PLUGIN !== "np-agent-v1") {
     const { output, success } = await handle(scope, process.env.NP_ACTION_CONTEXT, { signal: stop.signal });
     process.stdout.write(output);
