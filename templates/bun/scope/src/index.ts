@@ -7,8 +7,16 @@
 //   NP_ACTION_CONTEXT=... bun src/index.ts   answer one action (how the agent execs the worker)
 //   NP_AGENT_PLUGIN=np-agent-v1 ...          serve the gRPC protocol (how the agent dials the worker)
 import { parseArgs } from "node:util";
-import { handle, serve } from "@nullplatform/plugin";
+import { handle, noopTracing, serve } from "@nullplatform/plugin";
+import { InMemoryPlatformClient } from "@nullplatform/plugin/platform";
 import scope from "./scope";
+
+// `np package dev` and `np package test` run this worker locally and say so in
+// NP_MODE: nothing then reaches the platform or the tracing API. The SDK knows
+// no environments; this entry point decides.
+const local = Boolean(process.env.NP_MODE);
+const platform = local ? new InMemoryPlatformClient() : undefined;
+const plugin = local ? { ...scope, tracing: noopTracing } : scope;
 
 const stop = new AbortController();
 process.on("SIGTERM", () => stop.abort());
@@ -26,11 +34,11 @@ try {
     }
     await scope.publish({ nrn: flags.nrn });
   } else if (process.env.NP_ACTION_CONTEXT && process.env.NP_AGENT_PLUGIN !== "np-agent-v1") {
-    const { output, success } = await handle(scope, process.env.NP_ACTION_CONTEXT, { signal: stop.signal });
+    const { output, success } = await handle(plugin, process.env.NP_ACTION_CONTEXT, { platform, signal: stop.signal });
     process.stdout.write(output);
     process.exit(success ? 0 : 1);
   } else {
-    await serve(scope, { signal: stop.signal });
+    await serve(plugin, { platform, signal: stop.signal });
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
