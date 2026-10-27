@@ -4,16 +4,15 @@
   "description": "{{ .Name }}, a deployment target on nullplatform",
   "private": true,
   "type": "module",
-  "main": "src/main.ts",
+  "main": "src/index.ts",
   "scripts": {
-    "describe": "bun src/main.ts --describe",
+    "describe": "bun src/index.ts --describe",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p .",
-    "build": "bun build --compile src/main.ts --outfile dist/{{ .Slug }}"
+    "build": "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
   },
   "dependencies": {
-    "@nullplatform/plugin": "0.1.9",
-    "@nullplatform/tracing": "0.0.16"
+    "@nullplatform/plugin": "^0.2.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",

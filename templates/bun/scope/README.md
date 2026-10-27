@@ -2,8 +2,9 @@
 
 A nullplatform **scope** — a place the platform deploys applications to — as a
 **package**. The scope, its scope type, every lifecycle action and its plan are
-declared in code with `@nullplatform/plugin`, each action is a TypeScript
-function, and one `np package publish` registers all of it.
+declared in code with `defineScope` from `@nullplatform/plugin/scope`, each
+action is a TypeScript function, and one `np package publish` registers all of
+it.
 
 Creating a scope provisions nothing for the workload: that happens on the
 deployment actions.
@@ -12,23 +13,27 @@ deployment actions.
 
 | File | What it is |
 |---|---|
-| `src/schema.ts` | the attributes: the inputs the user sets (in `required`, with defaults) and the outputs a deployment reports |
-| `src/resources.ts` | the scope, its scope type, the handler of every action and each action's **plan** (stages + steps) |
-| `src/scope.ts` | `create-scope` / `delete-scope`: the target's footprint |
+| `src/schema.ts` | the specification: its selectors, the attributes (the inputs the user sets, in `required` with defaults, and the outputs a deployment reports) and the console form |
+| `src/scope.ts` | `defineScope`: the package (from `package.json`), the scope type and the handler of every action |
+| `src/plans.ts` | each action's title, description and **plan** (stages + steps) on the console's timeline |
+| `src/target.ts` | `create-scope` / `delete-scope`: the target's footprint |
 | `src/deployment.ts` | `start-initial` / `start-blue-green` / `switch-traffic` / `finalize-blue-green` / `rollback-deployment` / `delete-deployment` |
 | `src/logs.ts` | `log:read`: the workload's logs, as data |
-| `src/package.ts` | `definePackage` and the tracer (name, version and description come from `package.json`) |
-| `test/` | one `pkg.run()` per action: status, steps, results, traffic |
+| `src/index.ts` | what the agent runs: `await main(scope)` |
+| `src/local.ts` | the same, with in-memory ports: nothing reaches the platform |
+| `test/` | one `run()` per action against the documents in `test/fixtures/`: steps, results, the platform's requests |
 
-The body of every `ctx.step(...)` is a placeholder for your infrastructure.
+The body of every `context.trace.step(...)` is a placeholder for your infrastructure.
 
 ## Develop
 
 ```bash
-mise run test        # every action in-process, no platform
+mise run test                                       # every action in-process, no platform
 mise run typecheck
-mise run describe    # the manifest np package publish sends
-np package dev       # browser dev UI: pick an action, edit the notification, run it
+mise run describe                                   # the manifest np package publish sends
+mise run local                                      # answer test/fixtures/create-scope.json locally
+mise run local test/fixtures/start-initial.json     # …or any other document
+np package dev                                      # browser dev UI: pick a run, edit the document, run it
 ```
 
 ## Run and publish

@@ -1,57 +1,66 @@
 import { describe, expect, test } from "bun:test";
-import { Actions } from "@nullplatform/plugin/package";
-import pkg from "../src/package";
-import { plans, target } from "../src/resources";
+import { ScopeActions } from "@nullplatform/plugin/scope";
+import { run } from "@nullplatform/plugin/testing";
+import manifest from "../package.json" with { type: "json" };
+import { narration } from "../src/plans";
+import scope from "../src/scope";
+import createScope from "./fixtures/create-scope.json" with { type: "json" };
+import logRead from "./fixtures/log-read.json" with { type: "json" };
+import startInitial from "./fixtures/start-initial.json" with { type: "json" };
+import switchTraffic from "./fixtures/switch-traffic.json" with { type: "json" };
 
-// pkg.run() runs one action the way production does — same dispatch, same
-// context — with no platform, and returns what the platform would record:
-// status, results, error, logs, steps and the traffic reported.
-const scope = { id: "77", slug: "orders-prod", dimensions: { environment: "prod" } };
-const service = { id: "svc-77", slug: "orders-prod", attributes: { replicas: 2, asset_url: "registry.example.com/orders:1.4.0" } };
-const given = { scope, service };
-// The platform sends deployment actions their ids as parameters.
-const deployment = { scope_id: "77", deployment_id: "d-9" };
-
-type Plan = { groups: Array<{ key: string }>; steps: Array<{ key: string; group: string }> };
-const planOf = (action: string) => (plans as Record<string, Plan>)[action];
-const keys = (action: string) => planOf(action).steps.map((s) => s.key);
+// run() answers one payload the way the worker does — same routes, same
+// lifecycle — with an in-memory platform, and returns what came of it: the
+// answer's data or failure, every platform request, the logs and the steps.
+// Each fixture is a document as the agent delivers it; run() takes its payload.
+const planned = (action: keyof typeof narration) => narration[action].plan.steps.map((step) => step.key);
+const bodies = (result: { requests: Array<{ body?: unknown }> }) => result.requests.map((request) => request.body);
 
 describe("{{ .Name }}", () => {
-  test("create-scope prepares the target", async () => {
-    const run = await pkg.run(target, Actions.CREATE_SCOPE, { scope_id: "77" }, given);
-    expect(run.status).toBe("success");
-    expect(run.steps.map((s) => s.key)).toEqual(keys(Actions.CREATE_SCOPE));
+  test("the package is package.json's", () => {
+    expect(scope.package).toMatchObject({ name: manifest.name, version: manifest.version, description: manifest.description });
+  });
+
+  test("describe publishes the scope type", () => {
+    const scopeType = scope.manifest().components.find((component) => component.resource_type === "scope_type");
+    expect(scopeType?.resource).toMatchObject({ name: "{{ .Name }}", description: "Deploy applications to {{ .Name }}" });
+  });
+
+  test("create-scope prepares the target and reports the action", async () => {
+    const result = await run(scope, createScope.notification);
+    expect(result.success).toBe(true);
+    expect(result.steps.map((step) => step.key)).toEqual(planned(ScopeActions.CREATE_SCOPE));
+    expect(bodies(result)).toEqual([
+      { status: "in_progress" },
+      { messages: [{ level: "info", message: "scope 77 ready for 2 replica(s)" }] },
+      { status: "success", results: {} },
+    ]);
   });
 
   test("start-initial launches the asset and reports where it answers", async () => {
-    const run = await pkg.run(target, Actions.START_INITIAL, deployment, given);
-    expect(run.status).toBe("success");
-    expect(run.results).toEqual({ endpoint: "https://d-9.{{ .Slug }}.example.com" });
-    expect(run.steps.map((s) => s.key)).toEqual(keys(Actions.START_INITIAL));
+    const result = await run(scope, startInitial.notification);
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ endpoint: "https://d-9.{{ .Slug }}.example.com" });
+    expect(result.steps.map((step) => step.key)).toEqual(planned(ScopeActions.START_INITIAL));
+    expect(bodies(result).at(-1)).toEqual({ status: "success", results: { endpoint: "https://d-9.{{ .Slug }}.example.com" } });
   });
 
   test("a deployment without an asset fails with a named error", async () => {
-    const run = await pkg.run(target, Actions.START_INITIAL, deployment, { scope, service: { ...service, attributes: { replicas: 1 } } });
-    expect(run.status).toBe("failed");
-    expect(run.error?.code).toBe("NO_ASSET");
+    const result = await run(scope, startInitial.notification, { with: { service: { attributes: { asset_url: "" } } } });
+    expect(result.success).toBe(false);
+    expect(result.failure?.code).toBe("NO_ASSET");
   });
 
-  test("switch-traffic reports the weight it moved", async () => {
-    const run = await pkg.run(target, Actions.SWITCH_TRAFFIC, { ...deployment, desired_traffic: 30 }, given);
-    expect(run.status).toBe("success");
-    expect(run.traffic).toEqual([30]);
+  test("switch-traffic reports the weight it moved on the deployment", async () => {
+    const result = await run(scope, switchTraffic.notification);
+    expect(result.success).toBe(true);
+    expect(result.requests).toContainEqual({ method: "PATCH", path: "/deployment/d-9", body: { strategy_data: { switched_traffic: 30 } } });
   });
 
-  test("log:read answers the platform's shape", async () => {
-    const run = await pkg.run(target, Actions.LOG_READ, { scope_id: "77" }, given);
-    expect(run.status).toBe("success");
-    expect((run.data as { results: unknown[] }).results).toHaveLength(1);
-  });
-
-  test("every planned step sits in a declared stage", () => {
-    for (const [action, plan] of Object.entries(plans as Record<string, Plan>)) {
-      const stages = new Set(plan.groups.map((g) => g.key));
-      for (const step of plan.steps) expect(stages.has(step.group), `${action}/${step.key}`).toBe(true);
-    }
+  test("log:read answers the platform's shape, with no lifecycle", async () => {
+    const result = await run(scope, logRead.notification);
+    expect(result.success).toBe(true);
+    expect((result.data as { results: unknown[] }).results).toHaveLength(1);
+    expect(result.requests).toEqual([]);
   });
 });

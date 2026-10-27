@@ -1,0 +1,36 @@
+{
+  "notification": {
+    "action": "log:read",
+    "entity_nrn": "organization=1:account=2:namespace=3:application=4:scope=77",
+    "arguments": {
+      "application_id": "4",
+      "scope_id": "77",
+      "limit": 100,
+      "scope_type": "custom",
+      "scope_provider": "scope-type-1"
+    },
+    "scope": {
+      "id": 77,
+      "slug": "orders-prod",
+      "nrn": "organization=1:account=2:namespace=3:application=4:scope=77",
+      "provider": "scope-type-1"
+    },
+    "service": {
+      "id": "svc-77",
+      "dimensions": {
+        "environment": "prod"
+      }
+    },
+    "parameters": {
+      "scope_id": 77
+    },
+    "tags": {
+      "scope_id": "77",
+      "scope": "orders-prod",
+      "application_id": "4",
+      "application": "orders",
+      "namespace_id": "3",
+      "namespace": "shop"
+    }
+  }
+}
