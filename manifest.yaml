@@ -10,9 +10,9 @@ version: 1
 #
 # Prompts (category `variables`) ask ONLY for what the scaffold can't derive:
 # the human name (the slug is auto-derived from it). Everything else — scope
-# category/provider, agent routing — is declared in code via the SDK
-# (service()/scope() in src/resources.ts), the single source of truth, and
-# changed there.
+# category/provider, agent routing, a collector's source — is declared in code
+# via the SDK (defineScope/defineService/definePlugin/defineCollector in the
+# template's definition file), the single source of truth, and changed there.
 
 categories:
   - type: scope
@@ -47,7 +47,7 @@ sdks:
 templates:
   - id: scope-bun
     name: Scope (TypeScript/Bun)
-    description: A deployment target on the SDK's package layer — the scope, its scope type and each lifecycle action (create, deploy, switch traffic, roll back, logs) as a typed handler; tests are one pkg.run() call.
+    description: A deployment target on defineScope — the scope, its scope type and each lifecycle action (create, deploy, switch traffic, roll back, logs) as a handler typed from its schema; tests are one run() call per action.
     path: bun/scope
     type: scope
     sdk: bun
@@ -57,13 +57,14 @@ templates:
     next_steps:
       - "cd {{ .Slug }}"
       - "mise run test              # every action in-process, no platform"
+      - "mise run local             # one action through src/local.ts, no platform"
       - "np package dev             # browser dev UI against a mock platform"
       - "np package run             # a real agent on this machine spawns the worker"
       - "np package publish         # push the worker image + register the package"
 
   - id: simple-bun
     name: Command handler (TypeScript/Bun)
-    description: One execute() component on the SDK's package layer — answer any command the agent hands over (health checks, migrations, live reads), the answer in the same response; tests are one pkg.execute() call.
+    description: One execute() route on definePlugin — answer any command the agent hands over (health checks, migrations, live reads), the answer in the same response; tests are one run() call per command.
     path: bun/simple
     type: simple
     sdk: bun
@@ -73,12 +74,13 @@ templates:
     next_steps:
       - "cd {{ .Slug }}"
       - "mise run test              # every command in-process, no platform"
+      - "mise run local             # one command through src/local.ts, no platform"
       - "np package run             # a real agent on this machine spawns the worker"
       - "np package publish         # push the worker image + register the package"
 
   - id: service-bun
     name: Service / dependency (TypeScript/Bun)
-    description: An application dependency on the SDK's package layer — the service and its connect link declared as values, create/update/delete as typed handlers; tests are one pkg.run() call.
+    description: An application dependency on defineService — the service and its connect link, create/update/delete as handlers typed from their schemas; tests are one run() call per action.
     path: bun/service
     type: service
     sdk: bun
@@ -88,6 +90,7 @@ templates:
     next_steps:
       - "cd {{ .Slug }}"
       - "mise run test              # every action in-process, no platform"
+      - "mise run local             # one action through src/local.ts, no platform"
       - "np package dev             # browser dev UI against a mock platform"
       - "np package run             # a real agent on this machine spawns the worker"
       - "np package publish         # push the worker image + register the package"
