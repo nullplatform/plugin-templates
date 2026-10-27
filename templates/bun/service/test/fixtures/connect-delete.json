@@ -1,0 +1,64 @@
+{
+  "notification": {
+    "action": "service:action:create",
+    "id": "act-5",
+    "slug": "delete-orders-db-connect",
+    "name": "delete-orders-db-connect",
+    "type": "delete",
+    "status": "pending",
+    "parameters": {},
+    "specification": {
+      "id": "action-spec-5",
+      "slug": "delete-orders-db-connect"
+    },
+    "service": {
+      "id": "svc-1",
+      "slug": "orders-db",
+      "attributes": {
+        "size": "small",
+        "endpoint": "svc-1.{{ .Slug }}.internal"
+      },
+      "type": "dependency",
+      "specification": {
+        "id": "spec-1",
+        "slug": "{{ .Slug }}"
+      },
+      "dimensions": {}
+    },
+    "link": {
+      "id": "lnk-9f2a",
+      "slug": "orders-db-connect",
+      "attributes": {
+        "connection_url": "tcp://np-lnk-9f2a@svc-1.{{ .Slug }}.internal"
+      },
+      "specification": {
+        "id": "link-spec-1",
+        "slug": "connect"
+      },
+      "dimensions": {}
+    },
+    "tags": {
+      "organization_id": "1",
+      "account_id": "2",
+      "namespace_id": "3",
+      "application_id": "4",
+      "application": "orders-api"
+    },
+    "entity_nrn": "organization=1:account=2:namespace=3:application=4",
+    "results": {},
+    "package": {
+      "id": "pkg-1",
+      "slug": "{{ .Slug }}",
+      "name": "{{ .Slug }}",
+      "revision": {
+        "id": "rev-1",
+        "version": "0.1.0",
+        "artifacts": []
+      }
+    },
+    "user": {
+      "id": "1",
+      "email": "dev@example.com"
+    }
+  }
+}
