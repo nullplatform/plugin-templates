@@ -1,0 +1,3 @@
+{"change": "upsert", "record": {"id": "svc-13", "name": "checkout", "owner": "payments", "retired": false}, "at": "2026-01-01T10:00:00.000Z"}
+{"change": "upsert", "record": {"id": "svc-11", "name": "search", "owner": "discovery", "retired": true}, "at": "2026-01-01T10:05:00.000Z"}
+{"change": "delete", "record": {"id": "svc-10", "name": "billing", "owner": "payments", "retired": false}, "at": "2026-01-01T10:10:00.000Z"}

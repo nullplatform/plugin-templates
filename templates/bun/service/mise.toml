@@ -1,11 +1,6 @@
 [tools]
 bun = "latest"
 
-# The SDK reads its settings through node-config and, with no config/ directory
-# here, falls back to plain env vars; this keeps node-config quiet about it.
-[env]
-SUPPRESS_NO_CONFIG_WARNING = "1"
-
 # Install is the root of the task graph: every task depends on it, so a fresh
 # clone just works without remembering `bun install` first.
 [tasks.install]
@@ -16,10 +11,10 @@ sources = ["package.json", "bun.lock"]
 [tasks.describe]
 description = "Print the package manifest (what np package publish sends)"
 depends = ["install"]
-run = "bun src/main.ts --describe"
+run = "bun src/index.ts --describe"
 
 [tasks.test]
-description = "Run the tests: every action in-process through pkg.run(), no platform"
+description = "Run the tests: every action in-process through run(), no platform"
 depends = ["install"]
 run = "bun test"
 
@@ -31,7 +26,7 @@ run = "bunx tsc --noEmit -p ."
 [tasks.build]
 description = "Compile the worker to a single binary"
 depends = ["install"]
-run = "bun build --compile src/main.ts --outfile dist/{{ .Slug }}"
+run = "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
 sources = ["src/**/*.ts", "package.json", "bun.lock"]
 outputs = ["dist/{{ .Slug }}"]
 
@@ -39,14 +34,24 @@ outputs = ["dist/{{ .Slug }}"]
 description = "Cross-compile the worker for every release target"
 depends = ["install"]
 run = """
-bun build --compile --target=bun-linux-x64-musl   src/main.ts --outfile dist/{{ .Slug }}-linux-x64
-bun build --compile --target=bun-linux-arm64-musl src/main.ts --outfile dist/{{ .Slug }}-linux-arm64
-bun build --compile --target=bun-darwin-arm64     src/main.ts --outfile dist/{{ .Slug }}-darwin-arm64
+bun build --compile --target=bun-linux-x64-musl   src/index.ts --outfile dist/{{ .Slug }}-linux-x64
+bun build --compile --target=bun-linux-arm64-musl src/index.ts --outfile dist/{{ .Slug }}-linux-arm64
+bun build --compile --target=bun-darwin-arm64     src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
 """
 
-# `np package dev` → the browser dev UI: every action from the manifest, the
-# notification the platform would send as the editor's starting point, live
-# output. Runs against a mock platform; never calls the real API.
+# One action answered locally, the way the agent execs the worker: the document
+# (a fixture under test/fixtures, or your own) in NP_ACTION_CONTEXT, run through
+# src/local.ts, whose in-memory ports reach no platform: each request the
+# platform would get is told on stderr, the answer is stdout.
+[tasks.local]
+description = "Answer one document locally (default: test/fixtures/create.json), no platform"
+depends = ["install"]
+usage = 'arg "[document]" help="The document the agent would deliver" default="test/fixtures/create.json"'
+run = 'NP_ACTION_CONTEXT="$(cat "$usage_document")" bun src/local.ts'
+
+# `np package dev` → the browser dev UI: every run the manifest offers, the
+# document the platform would send as the editor's starting point, live
+# output. It starts src/local.ts, whose in-memory ports never call the real API.
 [tasks.dev]
 description = "Run the package with the dev UI"
 depends = ["install"]

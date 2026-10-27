@@ -1,0 +1,87 @@
+[tools]
+bun = "latest"
+
+# Install is the root of the task graph: every task depends on it, so a fresh
+# clone just works without remembering `bun install` first.
+[tasks.install]
+description = "Install dependencies"
+run = "bun install"
+sources = ["package.json", "bun.lock"]
+
+[tasks.describe]
+description = "Print the collector's manifest: the package, its source, mappings and schedule"
+depends = ["install"]
+run = "bun src/index.ts --describe"
+
+[tasks.test]
+description = "Run the tests: snapshots, the watch and the mapping in-process, no network"
+depends = ["install"]
+run = "bun test"
+
+[tasks.typecheck]
+description = "Type-check the collector"
+depends = ["install"]
+run = "bunx tsc --noEmit -p ."
+
+[tasks.build]
+description = "Compile the collector to a single binary"
+depends = ["install"]
+run = "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
+sources = ["src/**/*.ts", "package.json", "bun.lock"]
+outputs = ["dist/{{ .Slug }}"]
+
+[tasks."build:all"]
+description = "Cross-compile the collector for every release target"
+depends = ["install"]
+run = """
+bun build --compile --target=bun-linux-x64-musl   src/index.ts --outfile dist/{{ .Slug }}-linux-x64
+bun build --compile --target=bun-linux-arm64-musl src/index.ts --outfile dist/{{ .Slug }}-linux-arm64
+bun build --compile --target=bun-darwin-arm64     src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
+"""
+
+# One snapshot locally: the document `{}` in NP_ACTION_CONTEXT, run through
+# src/local.ts, whose in-memory ingest sends nothing: what catalog-ingest-api
+# would get is told on stderr, the snapshot's result is stdout.
+[tasks.local]
+description = "Take one snapshot locally against an in-memory ingest (sends nothing)"
+depends = ["install"]
+run = "NP_ACTION_CONTEXT='{}' bun src/local.ts"
+
+# Served locally, the way the image runs: a snapshot now and every interval,
+# plus the watch, until Ctrl-C, against the in-memory ingest. Reloads on save.
+[tasks.dev]
+description = "Serve the collector locally with hot reload, against an in-memory ingest (sends nothing)"
+depends = ["install"]
+run = "bun --hot src/local.ts"
+
+# One real snapshot, fed to catalog-ingest-api with NP_API_KEY: what a cron job
+# runs. INVENTORY_URL names the export (the collector's own inventory without it).
+[tasks.once]
+description = "Take one real snapshot and print its result (needs NP_API_KEY)"
+depends = ["install"]
+run = """
+set -eu
+: "${NP_API_KEY:?set NP_API_KEY}"
+NP_ACTION_CONTEXT='{}' bun src/index.ts
+"""
+
+[tasks."build:image"]
+description = "Build the collector image"
+run = "docker build -t {{ .Slug }}:dev ."
+
+# Run the image the way production does: served, a snapshot every interval
+# plus the watch, until stopped. Needs NP_API_KEY.
+[tasks.run]
+description = "Run the collector image locally, fed to catalog-ingest-api (needs NP_API_KEY)"
+depends = ["build:image"]
+run = """
+set -eu
+: "${NP_API_KEY:?set NP_API_KEY}"
+docker run --rm --name {{ .Slug }} -e NP_API_KEY -e NP_API_URL -e INVENTORY_URL -e INVENTORY_CHANGES_URL {{ .Slug }}:dev
+"""
+
+# Build + push the image to $NP_PUSH_REGISTRY (any registry you are
+# `docker login`ed to) and print registry/repo@sha256:<digest> on stdout.
+[tasks."publish:image"]
+description = "Build + push the collector image; prints its digest ref"
+run = "bash scripts/publish-image.sh"

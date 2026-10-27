@@ -5,9 +5,9 @@
 # declares. The SDK comes from npm through package.json.
 #
 # At runtime the agent injects NP_GRPC_LISTEN (the port), the mTLS material
-# (NP_WORKER_TLS_*), NP_API_KEY and, when tracing is on, NP_TRACING_URL. Never
-# set NP_MODE=dev here: it switches the SDK to the in-memory platform client
-# and no lifecycle is ever reported.
+# (NP_WORKER_TLS_*) and NP_API_KEY, which src/index.ts's main() reads. The
+# image runs src/index.ts, the real ports; src/local.ts, the in-memory ones,
+# never ships.
 
 ARG BUN_IMAGE=oven/bun:1-alpine
 ARG RUNTIME_IMAGE=alpine:3.20
@@ -22,7 +22,7 @@ RUN bun install --production
 COPY src ./src
 # bun names amd64 "x64".
 RUN arch=$([ "${TARGETARCH:-amd64}" = "amd64" ] && echo x64 || echo "$TARGETARCH") \
-    && bun build --compile --target="bun-linux-${arch}-musl" src/main.ts --outfile /out/{{ .Slug }}
+    && bun build --compile --target="bun-linux-${arch}-musl" src/index.ts --outfile /out/{{ .Slug }}
 
 FROM ${RUNTIME_IMAGE}
 # The bun musl binary links libstdc++/libgcc dynamically. The worker runs as
@@ -33,6 +33,5 @@ RUN apk add --no-cache ca-certificates libstdc++ libgcc \
 COPY --from=build /out/{{ .Slug }} /app/packages/{{ .Slug }}/entrypoint
 USER 65532
 ENV HOME=/home/worker \
-    SUPPRESS_NO_CONFIG_WARNING=1 \
     NP_AGENT_PLUGIN=np-agent-v1
 ENTRYPOINT ["/app/packages/{{ .Slug }}/entrypoint"]

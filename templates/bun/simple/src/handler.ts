@@ -2,33 +2,35 @@
  * The command handler: the platform (or a UI plugin, or a workflow) sends a
  * document through the agent — `POST /controlplane/agent_command` with
  * `{ type: "package-exec", data: { package: "{{ .Slug }}", environment: { NP_ACTION_CONTEXT: <document> } } }`
- * — and `execute()` answers it. What the handler returns is the answer, in
- * the same response: this is the way to serve reads (list, get) with live data.
+ * — and `execute()` hands it over as the payload. What the handler returns is
+ * the answer, in the same response: this is the way to serve reads (list,
+ * get) with live data.
  *
  * The document's shape is yours. This one dispatches on `action`, the way the
- * S3 browser package does (`list-objects`, `head-object`, …).
+ * S3 browser package does (`list-objects`, `head-object`, …). A document that
+ * wraps it, `{ notification: { action, … } }`, hands over what it wraps.
  */
 
-import { ActionError, type ExecuteContext } from "@nullplatform/plugin/package";
+import { ActionError, type Context, type Payload } from "@nullplatform/plugin";
 
 export interface Command {
   action: string;
   [field: string]: unknown;
 }
 
-/** The command out of the document: flat, or under `command` next to the platform's `notification`. */
-export function commandOf(payload: unknown): Command {
-  const outer = (payload ?? {}) as Record<string, unknown>;
-  const body = (outer.command && typeof outer.command === "object" ? outer.command : outer) as Record<string, unknown>;
-  if (typeof body.action !== "string" || !body.action) throw new ActionError("BAD_REQUEST", "the document carries no action");
-  return body as Command;
+/** The command the payload is: refused unless it names an action. */
+export function commandOf(payload: Payload): Command {
+  if (typeof payload.action !== "string" || !payload.action) {
+    throw new ActionError("BAD_REQUEST", "the document carries no action");
+  }
+  return payload as Command;
 }
 
-export async function handle(ctx: ExecuteContext): Promise<unknown> {
-  const command = commandOf(ctx.payload);
+export async function handle(payload: Payload, context: Context): Promise<unknown> {
+  const command = commandOf(payload);
   switch (command.action) {
     case "hello":
-      return ctx.step("say hello", async (step) => {
+      return context.trace.step("say-hello", async (step) => {
         const name = typeof command.name === "string" && command.name ? command.name : "world";
         step.explain({ what: `Said hello to ${name}.` });
         return { message: `Hello ${name}, from {{ .Name }}` };

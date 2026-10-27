@@ -1,7 +1,7 @@
 # {{ .Name }}
 
-A nullplatform **command handler** as a package: one `execute()` component
-from `@nullplatform/plugin/package` answers any document the agent hands over.
+A nullplatform **command handler** as a package: one `execute()` route from
+`@nullplatform/plugin` answers any document the agent hands over.
 Compiled to one binary and run as the worker the controlplane agent spawns.
 
 Use it for anything that isn't a scope or a service: health checks,
@@ -14,17 +14,20 @@ response**, so a `list` or `get` answers with real data, no catalog involved.
 
 | File | What it is |
 |---|---|
-| `src/handler.ts` | `handle(ctx)`: reads the document (`ctx.payload`), dispatches on `action`, returns the answer |
-| `src/package.ts` | `definePackage({ components: [execute(handle)] })` and the tracer |
-| `src/main.ts` | `--describe` (identity and agent routing for `np package publish`), else `pkg.start()` |
-| `test/` | one `pkg.execute(document)` per command: status, data, error, steps |
+| `src/handler.ts` | `handle(payload, context)`: reads the document, dispatches on `action`, returns the answer |
+| `src/plugin.ts` | `definePlugin({ package, routes: [execute(handle)] })`, the package from `package.json` |
+| `src/index.ts` | what the agent runs: `await main(plugin)` |
+| `src/local.ts` | the same, with in-memory ports: nothing reaches the platform |
+| `test/` | one `run(plugin, document)` per command: data, failure, steps |
 
 ## Develop
 
 ```bash
-mise run test        # every command in-process, no platform
+mise run test                              # every command in-process, no platform
 mise run typecheck
-mise run describe    # the manifest np package publish reads
+mise run describe                          # the manifest np package publish reads
+mise run local                             # answer test/fixtures/hello.json locally
+mise run local path/to/your-document.json  # …or any other document
 ```
 
 ## Call it
