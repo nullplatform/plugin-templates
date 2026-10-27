@@ -33,6 +33,7 @@ plugin-templates/
 | scope | bun | Deployment target plugin (Kubernetes, Lambda, ECS, ...) |
 | simple | bun | Custom command handler (health checks, migrations, ...) |
 | service | bun | Application dependency plugin (databases, caches, ...) |
+| collector | bun | Catalog collector: feed the catalog from a system of record (Kubernetes, GitHub, CMDB, ...) |
 
 ## Adding a template
 
