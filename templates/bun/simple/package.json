@@ -12,7 +12,7 @@
     "build": "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
   },
   "dependencies": {
-    "@nullplatform/plugin": "^0.2.0"
+    "@nullplatform/plugin": "^0.3.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",
