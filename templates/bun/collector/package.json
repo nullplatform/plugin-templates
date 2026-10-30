@@ -12,8 +12,8 @@
     "build": "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
   },
   "dependencies": {
-    "@nullplatform/ingest": "^0.0.5",
-    "@nullplatform/plugin": "^0.2.0"
+    "@nullplatform/ingest": "^0.0.9",
+    "@nullplatform/plugin": "^0.3.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",

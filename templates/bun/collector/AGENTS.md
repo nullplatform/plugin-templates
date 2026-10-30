@@ -41,8 +41,8 @@ mise.toml               describe · test · typecheck · build · local · dev �
 3. If the system streams changes, `watch` emits each with
    `ctx.events.upsert` / `ctx.events.delete`, observed when it happened.
 4. The collector's configuration is its own: `inventoryCollector(config)`
-   takes it, `src/index.ts` reads it from the deployment. Never a slot of the
-   SDK's context (`ctx.settings` is always `{}`).
+   takes it, `src/index.ts` reads it from the deployment. Ingest's context
+   carries none (`@nullplatform/ingest` 0.0.6 removed its `settings` slot).
 5. Add tests: a snapshot through `run(collector, {}, { ports: { ingest } })`
    against an `InMemoryIngest`, the watch through `serve`, the mapping
    evaluated on a sample payload.
