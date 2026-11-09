@@ -83,8 +83,9 @@ depends = ["build:image"]
 run = """
 set -eu
 : "${NP_API_KEY:?set NP_API_KEY}"
-docker run --rm --name {{ .Slug }} --network host \
-  -v "${KUBECONFIG:-$HOME/.kube/config}:/home/collector/.kube/config:ro" \
+# Runs as your uid so a 0600 kubeconfig is readable; its exec/auth plugins are not in the image.
+docker run --rm --name {{ .Slug }} --network host --user "$(id -u):$(id -g)" \
+  -v "${KUBECONFIG:-$HOME/.kube/config}:/kubeconfig:ro" -e KUBECONFIG=/kubeconfig \
   -e NP_API_KEY -e NP_API_URL -e K8S_CONTEXT -e NP_COLLECTOR_SOURCE_SLUG {{ .Slug }}:dev
 """
 

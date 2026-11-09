@@ -34,7 +34,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Slug }}
+  name: {{ .Slug }}-reader
 rules:
   - apiGroups: [""]
     resources: [namespaces, nodes, pods, services, configmaps, persistentvolumeclaims, events]
@@ -52,11 +52,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Slug }}
+  name: {{ .Slug }}-reader
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Slug }}
+  name: {{ .Slug }}-reader
 subjects:
   - kind: ServiceAccount
     name: {{ .Slug }}

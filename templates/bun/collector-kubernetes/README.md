@@ -32,8 +32,9 @@ publish pins them as they are and **binds** each mapping in your organization
 
 - **nullplatform has published the Kubernetes definitions** (the `k8s-*`
   specifications, the `kubernetes` type and its mappings). Your publish pins
-  them; when one is missing it stops at once, before writing anything:
-  `<kind> <name> is nullplatform's and is not published yet`.
+  them; when one is missing it stops there, before binding anything or
+  registering the package: `<kind> <name> is nullplatform's and is not
+  published yet`.
 - The nullplatform CLI, `np`, newer than 2.13.0: its `np package publish`
   publishes a collector's definitions (`np upgrade`).
 - [mise](https://mise.jdx.dev) (`brew install mise`); it installs bun.
@@ -79,7 +80,7 @@ np package publish --nrn organization=<id> --image "$IMAGE"
 
 | Component | Owner | What publish does |
 |---|---|---|
-| `entity_specification` `k8s-*` (14) | nullplatform | looks each up and pins it; fails at once if one is missing |
+| `entity_specification` `k8s-*` (14) | nullplatform | looks each up and pins it; stops if one is missing |
 | `source_type` `kubernetes` | nullplatform | looks it up and pins it |
 | `mapping` `kubernetes/<record type>` (14) | nullplatform | looks each up and pins it |
 | `destination` `kubernetes/<record type>/k8s-<record type>` (14) | your organization | binds each mapping to its specification for every cluster's source; one found is kept |
@@ -186,11 +187,11 @@ Cutting a GitHub Release runs `.github/workflows/release.yml`: tests, then
 
 | What you see | Why | Fix |
 | --- | --- | --- |
-| publish fails: `<kind> k8s-… is nullplatform's and is not published yet` | nullplatform has not published the Kubernetes definitions where your organization can read them | ask nullplatform; nothing was written |
+| publish fails: `<kind> k8s-… is nullplatform's and is not published yet` | nullplatform has not published the Kubernetes definitions where your organization can read them | ask nullplatform, then publish again (what it already wrote, an extension's specification or the pushed image, is reused) |
 | the collector fails: `source type 'kubernetes' does not exist (GET /source_types lists the ones there are)` | the same, seen from a running collector | the same |
 | `no mapping is bound to a destination on source '…' for record type(s): …`, or `no record type of this collector is bound for source …` | the package is not published in the collector's organization, so nothing is bound | publish it (3) with a key of the organization the collector's key belongs to |
 | the log says `not bound for this source, not sent: …` | some record types are unbound: a destination deleted, or a publish taken from an older version | publish again |
-| publish refused with `409` on a destination | an extension's mapping is written where nullplatform's already is bound | delete that destination (6), publish again |
+| publish refused (`409`): `record type '…' already goes to '…' in this scope (…)` | an extension's mapping is written where nullplatform's already is bound | delete that destination (6), publish again |
 | `403` `insufficient permissions to access the requested resource` | the key lacks its role: publishing needs an organization admin's key; the collector's needs `organization:machine:ingest` at its sources' NRN | grant it (1), or use the right key |
 | `cannot list …: … forbidden` | the ClusterRole misses a resource (a CRD's), or events | add it to `deploy/collector.yaml`, or set `K8S_EVENTS=false` |
 | the collector crashes at start asking for credentials | no `NP_API_KEY` in its environment | add it to the secret (4) |
