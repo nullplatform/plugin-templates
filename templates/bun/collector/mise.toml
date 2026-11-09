@@ -8,13 +8,16 @@ description = "Install dependencies"
 run = "bun install"
 sources = ["package.json", "bun.lock"]
 
+# What `np package publish` reads: the package and the components it creates
+# in the organization (the specifications, the source type, its mappings and
+# where each is written), and the collector's source and schedule.
 [tasks.describe]
-description = "Print the collector's manifest: the package, its source, mappings and schedule"
+description = "Print the collector's manifest: the package, its definitions, its source and schedule (what np package publish reads)"
 depends = ["install"]
 run = "bun src/index.ts --describe"
 
 [tasks.test]
-description = "Run the tests: snapshots, the watch and the mapping in-process, no network"
+description = "Run the tests: snapshots, the watch, and each mapping against its specification, in-process, no network"
 depends = ["install"]
 run = "bun test"
 
@@ -56,6 +59,7 @@ run = "bun --hot src/local.ts"
 
 # One real snapshot, fed to catalog-ingest-api with NP_API_KEY: what a cron job
 # runs. INVENTORY_URL names the export (the collector's own inventory without it).
+# The organization must have the package published first (README.md, Publish).
 [tasks.once]
 description = "Take one real snapshot and print its result (needs NP_API_KEY)"
 depends = ["install"]
@@ -80,8 +84,10 @@ set -eu
 docker run --rm --name {{ .Slug }} -e NP_API_KEY -e NP_API_URL -e INVENTORY_URL -e INVENTORY_CHANGES_URL {{ .Slug }}:dev
 """
 
-# Build + push the image to $NP_PUSH_REGISTRY (any registry you are
-# `docker login`ed to) and print registry/repo@sha256:<digest> on stdout.
+# `np package publish` runs this when --image is omitted: build + push the
+# image to $NP_PUSH_REGISTRY (any registry you are `docker login`ed to) and
+# print registry/repo@sha256:<digest> on stdout, the image the package pins
+# and a deployment runs.
 [tasks."publish:image"]
 description = "Build + push the collector image; prints its digest ref"
 run = "bash scripts/publish-image.sh"

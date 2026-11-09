@@ -1,14 +1,20 @@
 name: release
 
-# Build + push the collector image when you cut a GitHub Release. The image is
-# tagged with the release version; deploy it as a long-lived container (served:
-# its schedule and its watch) or as a cron job (NP_ACTION_CONTEXT='{}': one
-# snapshot).
+# Publish this collector to nullplatform when you cut a GitHub Release.
+# `np package publish` builds + pushes the collector image tagged with the
+# release version (the mise `publish:image` task), creates or updates in the
+# organization what the manifest declares — its catalog specifications, its
+# source type, the type's mappings and where each is written — and registers
+# the package revision pinning that image. Deploying the image is yours
+# (deploy/, README.md).
 #
 # Works out of the box: the image goes to this repo's GitHub Container Registry
 # (ghcr.io/<owner>/<repo>) using the built-in GITHUB_TOKEN. To push elsewhere,
 # set the NP_PUSH_REGISTRY variable and REGISTRY_USERNAME / REGISTRY_PASSWORD
 # secrets.
+#
+# Configure: secret NULLPLATFORM_API_KEY (an organization admin's key),
+# variable NP_NRN (organization=<id>).
 
 on:
   release:
@@ -20,6 +26,7 @@ permissions:
   packages: write
 
 env:
+  NP_API_KEY: ${{ secrets.NULLPLATFORM_API_KEY }}
   NP_PUSH_REGISTRY: ${{ vars.NP_PUSH_REGISTRY || format('ghcr.io/{0}', github.repository) }}
 
 jobs:
@@ -29,16 +36,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
       - run: mise run test
+      - run: mise run typecheck
 
   publish:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # mise provides bun and runs the package's own tasks (describe, publish:image).
       - uses: jdx/mise-action@v2
       # buildx + QEMU so publish:image can build the multi-arch (amd64+arm64) image.
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
+      - name: Install np CLI
+        run: |
+          curl https://cli.nullplatform.com/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Log in to the container registry
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
@@ -49,7 +62,9 @@ jobs:
           user="${REGISTRY_USERNAME:-$GHCR_USER}"
           pass="${REGISTRY_PASSWORD:-$GHCR_TOKEN}"
           echo "$pass" | docker login "${NP_PUSH_REGISTRY%%/*}" -u "$user" --password-stdin
-      - name: Publish image
+      # The release tag is the version: the image is pushed as
+      # registry/repo:<version> and the package revision is pinned to it.
+      - name: Publish package
         env:
           NP_VERSION: ${{ github.event.release.tag_name }}
-        run: mise run publish:image
+        run: np package publish --nrn "${{ vars.NP_NRN }}" --version "${NP_VERSION#v}"

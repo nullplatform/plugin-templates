@@ -1,0 +1,8 @@
+/* A team, as the inventory names it: the entity's id and its external_id are its name. */
+{
+  "id": name,
+  "data": {
+    "external_id": name,
+    "name": name
+  }
+}

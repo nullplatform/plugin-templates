@@ -8,12 +8,14 @@
  *
  * Replace the inventory with your system of record: `snapshot` yields one raw
  * record per object it holds right now, `watch` emits the changes as they
- * happen; shaping a record into a catalog entity is the mapping's.
+ * happen; shaping a record into a catalog entity is its type's mapping's, and
+ * what the catalog holds of it its specification's (definitions.ts).
  */
 
-import { DeletePolicy, Engine, type CollectorEvents } from "@nullplatform/ingest";
+import { DeletePolicy, type CollectorEvents } from "@nullplatform/ingest";
 import { defineCollector } from "@nullplatform/plugin/collector";
 import manifest from "../package.json" with { type: "json" };
+import { ENTITIES, SOURCE_TYPE, SOURCE_TYPE_SLUG } from "./definitions";
 
 /** Where the collector reads its inventory: what its entry point builds it with. */
 export interface InventoryConfig {
@@ -81,14 +83,14 @@ async function* changeBatchesOf(url: string, signal: AbortSignal): AsyncGenerato
   }
 }
 
-/** Emits `change` as the catalog takes it, observed when the feed says: a service retired or deleted is deleted; any other is upserted, with its team. */
+/** Emits `change` as the catalog takes it, observed when the feed says: a service retired or deleted is deleted; any other is upserted, after its team. */
 function emitted(events: CollectorEvents, { change, record, at }: InventoryChange): void {
   if (change === "delete" || record.retired) {
     events.delete("service", record, { observedAt: at });
     return;
   }
-  events.upsert("service", record, { observedAt: at });
   events.upsert("team", { name: record.owner } satisfies TeamRecord, { observedAt: at });
+  events.upsert("service", record, { observedAt: at });
 }
 
 /** What resolves once `signal` aborts: at once if it already has. */
@@ -104,12 +106,10 @@ export function inventoryCollector(config: InventoryConfig) {
     // The package, as package.json declares it: baked in at build time. Its slug is also the source's, unless the entry point's source port says another.
     package: { name: manifest.name, version: manifest.version, description: manifest.description },
     source: {
-      // The source type's slug: what kind of system this is. Its shared mappings are the organization's.
-      type: "inventory",
-      name: "{{ .Name }}",
+      // The source type's slug, the package's: what kind of system this is (definitions.ts).
+      type: SOURCE_TYPE_SLUG,
+      name: "Inventory export",
       description: "The services an inventory export lists, and the teams that own them",
-      // The organization's own data about the source, read by a mapping as `$source.attributes`.
-      attributes: { region: "us-east-1" },
       runs: {
         // A snapshot not finished within an hour is aborted.
         ttlSeconds: 3600,
@@ -121,21 +121,10 @@ export function inventoryCollector(config: InventoryConfig) {
         rejectEmpty: true,
       },
     },
-    // A type the inventory source type's shared mappings map: the organization binds it to its endpoints once.
-    recordTypes: ["team"],
-    mappings: {
-      // The collector's own type: its mapping is evaluated by catalog-ingest-api, and `data` must satisfy the endpoint's schema.
-      service: {
-        engine: Engine.JSONATA,
-        // Each service an entity of its id, in the region the source's attributes name.
-        expression: '{ "id": id, "data": { "external_id": id, "name": name, "owner": owner, "region": $source.attributes.region } }',
-        // Where the entities go: the catalog, and its endpoint, a specification's slug.
-        target: "catalog",
-        endpoint: "inventory-service",
-        // Written while true: false stops writing the mapping's entities, the mapping kept.
-        enabled: true,
-      },
-    },
+    // What its records become, the publisher's own: `np package publish` writes them into the organization.
+    entities: ENTITIES,
+    // Its source type and the type's mappings, each bound to its specification: the record types it sends are theirs.
+    sourceType: SOURCE_TYPE,
     // With a watch, a resync: every six hours a snapshot catches what the watch missed while it was down.
     schedule: { intervalSeconds: 21_600 },
     // Everything the system of record holds right now. A snapshot that throws is aborted and deletes nothing: let errors propagate.
@@ -143,11 +132,11 @@ export function inventoryCollector(config: InventoryConfig) {
       const services = (await inventoryOf(config.inventoryUrl, ctx.signal)).filter((service) => !service.retired);
       // What the snapshot found, as of when it started: its records are observed then, unless one says otherwise.
       ctx.log.info(`${services.length} service(s) in source ${ctx.source.slug} as of ${ctx.observedAt.toISOString()}`);
-      for (const service of services) {
-        yield { type: "service", payload: service };
-      }
       for (const team of teamsOf(services)) {
         yield { type: "team", payload: team };
+      }
+      for (const service of services) {
+        yield { type: "service", payload: service };
       }
     },
     // The changes as they happen, until the collector stops; ingest restarts a watch that throws or returns, after a backoff.

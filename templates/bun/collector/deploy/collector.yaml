@@ -1,0 +1,78 @@
+# The {{ .Slug }} collector, served: a snapshot on start and every interval
+# (the definition's schedule), plus the watch, until the pod stops. One
+# replica: two would send everything twice (harmless, but pointless).
+#
+# Before applying it (README.md, Deploy), publish the package, create the
+# namespace and the collector's settings secret, and put the image publish
+# pinned in place of COLLECTOR_IMAGE:
+#
+#   kubectl create namespace {{ .Slug }}
+#   kubectl -n {{ .Slug }} create secret generic {{ .Slug }} \
+#     --from-literal=NP_API_KEY=<the collector's API key> \
+#     --from-literal=INVENTORY_URL=<where the inventory export lives>
+#   sed "s|COLLECTOR_IMAGE|$IMAGE|" deploy/collector.yaml | kubectl apply -f -
+#
+# Every key of the secret is an environment variable of the container: the
+# platform's (NP_API_KEY, NP_API_URL) and the collector's own, which
+# src/index.ts reads (INVENTORY_URL, INVENTORY_CHANGES_URL).
+#
+# The collector reads no Kubernetes API: its service account mounts no token.
+# deploy/cronjob.yaml runs it as a cron job instead: one snapshot per run, no
+# watch.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Slug }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Slug }}
+  namespace: {{ .Slug }}
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Slug }}
+  namespace: {{ .Slug }}
+  labels:
+    app.kubernetes.io/name: {{ .Slug }}
+spec:
+  replicas: 1
+  # The old pod stops before the new one starts: never two watches at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Slug }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Slug }}
+    spec:
+      serviceAccountName: {{ .Slug }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: collector
+          image: COLLECTOR_IMAGE
+          envFrom:
+            - secretRef:
+                name: {{ .Slug }}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
