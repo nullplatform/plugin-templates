@@ -30,7 +30,7 @@ run = "bunx tsc --noEmit -p ."
 description = "Compile the collector to a single binary"
 depends = ["install"]
 run = "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
-sources = ["src/**/*.ts", "package.json", "bun.lock"]
+sources = ["src/**/*.ts", "src/**/*.jsonata", "package.json", "bun.lock"]
 outputs = ["dist/{{ .Slug }}"]
 
 [tasks."build:all"]
