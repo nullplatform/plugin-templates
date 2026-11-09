@@ -6,13 +6,18 @@ version: 1
 #   1. CATEGORY — what the plugin is (the problem it solves). First picker step.
 #   2. SDK      — how it's implemented (runtime/language). Second picker step.
 #
-# `templates` is the sparse (category, sdk) matrix pointing at templates/<path>.
+# `templates` lists each template by its unique `id` (what `np package init
+# --template <id>` names), with its category (`type`), its SDK and its
+# directory under templates/. Several templates may share a (category, sdk)
+# pair: the general one goes first, which CLIs that pick by pair still find.
 #
 # Prompts (category `variables`) ask ONLY for what the scaffold can't derive:
-# the human name (the slug is auto-derived from it). Everything else — scope
-# category/provider, agent routing, a collector's source — is declared in code
-# via the SDK (defineScope/defineService/definePlugin/defineCollector in the
-# template's definition file), the single source of truth, and changed there.
+# the human name (the slug is auto-derived from it). A variable beside `Name`
+# needs a `default`, so a scripted init never asks. Everything else — scope
+# category/provider, agent routing, a collector's source and definitions — is
+# declared in code via the SDK (defineScope/defineService/definePlugin/
+# defineCollector in the template's definition file), the single source of
+# truth, and changed there.
 
 categories:
   - type: scope
