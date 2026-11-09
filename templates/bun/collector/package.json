@@ -1,7 +1,7 @@
 {
   "name": "{{ .Slug }}",
   "version": "0.1.0",
-  "description": "{{ .Name }}, a catalog collector on nullplatform",
+  "description": {{ printf "%q" (print .Name ", a catalog collector on nullplatform") }},
   "private": true,
   "type": "module",
   "main": "src/index.ts",
@@ -12,11 +12,12 @@
     "build": "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
   },
   "dependencies": {
-    "@nullplatform/ingest": "^0.0.5",
-    "@nullplatform/plugin": "^0.2.0"
+    "@nullplatform/ingest": "^0.0.9",
+    "@nullplatform/plugin": "^0.5.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",
+    "ajv": "^8.17.0",
     "jsonata": "^2.2.2",
     "typescript": "^5.6.0"
   }

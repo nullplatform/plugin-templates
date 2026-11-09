@@ -7,9 +7,10 @@
 #
 # At runtime it needs NP_API_KEY (exchanged at NP_API_URL, the platform API
 # unless set) to feed catalog-ingest-api, and INVENTORY_URL /
-# INVENTORY_CHANGES_URL to name its inventory, which src/index.ts reads. The
-# image runs src/index.ts, the real ports; src/local.ts, the in-memory ones,
-# never ships.
+# INVENTORY_CHANGES_URL to name its inventory, which src/index.ts reads;
+# deploy/ runs it in Kubernetes. The image runs src/index.ts, the real ports;
+# src/local.ts, the in-memory ones, never ships. The mappings
+# (src/mappings/*.jsonata) are bundled into the binary.
 
 ARG BUN_IMAGE=oven/bun:1-alpine
 ARG RUNTIME_IMAGE=alpine:3.20

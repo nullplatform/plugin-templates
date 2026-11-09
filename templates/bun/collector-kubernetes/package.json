@@ -1,0 +1,25 @@
+{
+  "name": "{{ .Slug }}",
+  "version": "0.1.0",
+  "description": {{ printf "%q" (print .Name ", nullplatform's Kubernetes collector as a package") }},
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "describe": "bun src/index.ts --describe",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p .",
+    "build": "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
+  },
+  "dependencies": {
+    "@nullplatform/collector-kubernetes": "^0.7.0",
+    "@nullplatform/ingest": "^0.0.9",
+    "@nullplatform/plugin": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "ajv": "^8.17.0",
+    "jsonata": "^2.2.2",
+    "typescript": "^5.6.0"
+  }
+}

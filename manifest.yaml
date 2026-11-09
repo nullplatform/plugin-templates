@@ -6,13 +6,18 @@ version: 1
 #   1. CATEGORY — what the plugin is (the problem it solves). First picker step.
 #   2. SDK      — how it's implemented (runtime/language). Second picker step.
 #
-# `templates` is the sparse (category, sdk) matrix pointing at templates/<path>.
+# `templates` lists each template by its unique `id` (what `np package init
+# --template <id>` names), with its category (`type`), its SDK and its
+# directory under templates/. Several templates may share a (category, sdk)
+# pair: the general one goes first, which CLIs that pick by pair still find.
 #
 # Prompts (category `variables`) ask ONLY for what the scaffold can't derive:
-# the human name (the slug is auto-derived from it). Everything else — scope
-# category/provider, agent routing, a collector's source — is declared in code
-# via the SDK (defineScope/defineService/definePlugin/defineCollector in the
-# template's definition file), the single source of truth, and changed there.
+# the human name (the slug is auto-derived from it). A variable beside `Name`
+# needs a `default`, so a scripted init never asks. Everything else — scope
+# category/provider, agent routing, a collector's source and definitions — is
+# declared in code via the SDK (defineScope/defineService/definePlugin/
+# defineCollector in the template's definition file), the single source of
+# truth, and changed there.
 
 categories:
   - type: scope
@@ -105,7 +110,7 @@ templates:
 
   - id: collector-bun
     name: Catalog collector (TypeScript/Bun)
-    description: Feed the catalog from a system of record on defineCollector — snapshots on a schedule, changes from a watch, mappings evaluated by catalog-ingest-api; tests are one run() call per snapshot, against an in-memory ingest.
+    description: Feed the catalog from a system of record of your own on defineCollector — its catalog specifications, source type and mappings published with the package, snapshots on a schedule, changes from a watch; tests run every mapping against its specification, against an in-memory ingest.
     path: bun/collector
     type: collector
     sdk: bun
@@ -114,8 +119,25 @@ templates:
       - "mise install"
     next_steps:
       - "cd {{ .Slug }}"
-      - "mise run test              # snapshots, the watch and the mapping, no network"
+      - "mise run test              # snapshots, the watch, each mapping against its specification, no network"
       - "mise run local             # one snapshot against an in-memory ingest (sends nothing)"
-      - "mise run dev               # served against the in-memory ingest, with hot reload"
-      - "mise run once              # one real snapshot (needs NP_API_KEY)"
-      - "mise run publish:image     # build + push the collector image"
+      - "np package publish --nrn organization=<id> --dry-run   # what publish creates in the organization"
+      - "np package publish --nrn organization=<id>             # build + push the image, create the definitions, register the package"
+      - "kubectl apply …            # deploy/collector.yaml, after its secret: README.md, Deploy"
+
+  - id: collector-kubernetes-bun
+    name: Kubernetes collector (TypeScript/Bun)
+    description: Run nullplatform's Kubernetes collector as your own package — every cluster's workloads, nodes, services and events in the catalog, its definitions nullplatform's and pinned, a read-only in-cluster Deployment; ready to extend with your own entities and mappings (a CRD's).
+    path: bun/collector-kubernetes
+    type: collector
+    sdk: bun
+    post_init:
+      - "mise trust mise.toml"
+      - "mise install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "mise run test              # the definitions it publishes, a snapshot of a fake cluster, the extension"
+      - "mise run local             # one snapshot of your current kube context, sent nowhere"
+      - "np package publish --nrn organization=<id> --dry-run   # pins nullplatform's definitions, binds them in the organization"
+      - "np package publish --nrn organization=<id>             # build + push the image, register the package"
+      - "kubectl apply …            # deploy/collector.yaml in each cluster, after its secret: README.md, Deploy"

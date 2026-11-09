@@ -1,0 +1,10 @@
+/* A service the inventory lists, by its inventory id, and the team that owns it (the team relation's alias). */
+{
+  "id": id,
+  "data": {
+    "external_id": id,
+    "name": name,
+    "owner": owner,
+    "team_id": owner
+  }
+}
