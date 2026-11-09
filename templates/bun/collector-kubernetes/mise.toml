@@ -1,0 +1,97 @@
+[tools]
+bun = "latest"
+
+# Install is the root of the task graph: every task depends on it, so a fresh
+# clone just works without remembering `bun install` first.
+[tasks.install]
+description = "Install dependencies"
+run = "bun install"
+sources = ["package.json", "bun.lock"]
+
+# What `np package publish` reads: nullplatform's definitions it pins (the
+# k8s-* specifications, the kubernetes type and its mappings), where each
+# mapping is written in the organization (a destination), and the extension's
+# own. Every record type's, whatever K8S_* says: describe asks the cluster nothing.
+[tasks.describe]
+description = "Print the collector's manifest: what np package publish pins, binds and creates"
+depends = ["install"]
+run = "bun src/index.ts --describe"
+
+[tasks.test]
+description = "Run the tests: the definitions it publishes, a snapshot of a fake cluster, the extension; no cluster, no network"
+depends = ["install"]
+run = "bun test"
+
+[tasks.typecheck]
+description = "Type-check the collector"
+depends = ["install"]
+run = "bunx tsc --noEmit -p ."
+
+[tasks.build]
+description = "Compile the collector to a single binary"
+depends = ["install"]
+run = "bun build --compile src/index.ts --outfile dist/{{ .Slug }}"
+sources = ["src/**/*.ts", "src/**/*.jsonata", "package.json", "bun.lock"]
+outputs = ["dist/{{ .Slug }}"]
+
+[tasks."build:all"]
+description = "Cross-compile the collector for every release target"
+depends = ["install"]
+run = """
+bun build --compile --target=bun-linux-x64-musl   src/index.ts --outfile dist/{{ .Slug }}-linux-x64
+bun build --compile --target=bun-linux-arm64-musl src/index.ts --outfile dist/{{ .Slug }}-linux-arm64
+bun build --compile --target=bun-darwin-arm64     src/index.ts --outfile dist/{{ .Slug }}-darwin-arm64
+"""
+
+# One snapshot of the cluster of the current kube context (K8S_CONTEXT names
+# another), through src/local.ts, whose in-memory ingest sends nothing: what
+# catalog-ingest-api would get is told on stderr, the snapshot's result is stdout.
+[tasks.local]
+description = "Take one snapshot of the current kube context against an in-memory ingest (sends nothing)"
+depends = ["install"]
+run = "NP_ACTION_CONTEXT='{}' bun src/local.ts"
+
+# Served locally, the way the image runs: a snapshot now and every interval,
+# plus the watch, until Ctrl-C, against the in-memory ingest. Reloads on save.
+[tasks.dev]
+description = "Serve the collector locally on the current kube context with hot reload, against an in-memory ingest (sends nothing)"
+depends = ["install"]
+run = "bun --hot src/local.ts"
+
+# One real snapshot of the current kube context, fed to catalog-ingest-api with
+# NP_API_KEY: the package must be published in the organization first.
+[tasks.once]
+description = "Take one real snapshot of the current kube context and print its result (needs NP_API_KEY)"
+depends = ["install"]
+run = """
+set -eu
+: "${NP_API_KEY:?set NP_API_KEY}"
+NP_ACTION_CONTEXT='{}' bun src/index.ts
+"""
+
+[tasks."build:image"]
+description = "Build the collector image"
+run = "docker build -t {{ .Slug }}:dev ."
+
+# Run the image the way a cluster does, served, against the cluster of your
+# kubeconfig (mounted read-only; on the host's network, so a local cluster's
+# 127.0.0.1 answers). A kubeconfig that runs a command for its token (aws,
+# gcloud) does not work in the image: use a deployment (deploy/) instead.
+[tasks.run]
+description = "Run the collector image locally on your kubeconfig, fed to catalog-ingest-api (needs NP_API_KEY)"
+depends = ["build:image"]
+run = """
+set -eu
+: "${NP_API_KEY:?set NP_API_KEY}"
+docker run --rm --name {{ .Slug }} --network host \
+  -v "${KUBECONFIG:-$HOME/.kube/config}:/home/collector/.kube/config:ro" \
+  -e NP_API_KEY -e NP_API_URL -e K8S_CONTEXT -e NP_COLLECTOR_SOURCE_SLUG {{ .Slug }}:dev
+"""
+
+# `np package publish` runs this when --image is omitted: build + push the
+# image to $NP_PUSH_REGISTRY (any registry you are `docker login`ed to) and
+# print registry/repo@sha256:<digest> on stdout, the image the package pins
+# and each cluster's deployment runs.
+[tasks."publish:image"]
+description = "Build + push the collector image; prints its digest ref"
+run = "bash scripts/publish-image.sh"

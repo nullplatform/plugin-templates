@@ -1,0 +1,28 @@
+[
+  {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+      "creationTimestamp": "2026-10-28T22:15:12Z",
+      "labels": { "kubernetes.io/metadata.name": "shop", "team": "commerce" },
+      "name": "shop",
+      "resourceVersion": "479",
+      "uid": "e20e09f4-499a-4abf-96a1-600edcde1779"
+    },
+    "spec": { "finalizers": ["kubernetes"] },
+    "status": { "phase": "Active" }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+      "creationTimestamp": "2026-10-28T22:10:01Z",
+      "labels": { "kubernetes.io/metadata.name": "kube-system" },
+      "name": "kube-system",
+      "resourceVersion": "12",
+      "uid": "7c1b2a90-3f1e-4d55-9a0b-2f6f0c1d9e11"
+    },
+    "spec": { "finalizers": ["kubernetes"] },
+    "status": { "phase": "Active" }
+  }
+]

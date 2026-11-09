@@ -1,0 +1,109 @@
+# The {{ .Slug }} collector, running in the cluster it collects: one source per
+# cluster, a snapshot on start and once a day (NP_COLLECTOR_INTERVAL_SECONDS),
+# plus the watch of every change, until the pod stops.
+#
+# Before applying it (README.md, Deploy), publish the package, create the
+# namespace and the collector's settings secret, and put the image publish
+# pinned in place of COLLECTOR_IMAGE:
+#
+#   kubectl create namespace {{ .Slug }}
+#   kubectl -n {{ .Slug }} create secret generic {{ .Slug }} \
+#     --from-literal=NP_API_KEY=<the collector's API key>
+#   sed "s|COLLECTOR_IMAGE|$IMAGE|" deploy/collector.yaml | kubectl apply -f -
+#
+# Every key of the secret is a setting (README.md, Settings): the source's
+# slug is the cluster's own name unless NP_COLLECTOR_SOURCE_SLUG names it, and
+# K8S_RESOURCES, K8S_EXCLUDE_NAMESPACES, K8S_EVENTS… narrow what it reads.
+#
+# RBAC is read-only: get, list and watch on exactly the resources the
+# collector reads, and the events (each object's current events, and the
+# `event` records; K8S_EVENTS=false reads none). get on namespaces and list on
+# nodes are also how it finds the cluster's name. Secrets are deliberately
+# absent. An extension that reads a CRD adds its group and resource here.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Slug }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Slug }}
+  namespace: {{ .Slug }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Slug }}
+rules:
+  - apiGroups: [""]
+    resources: [namespaces, nodes, pods, services, configmaps, persistentvolumeclaims, events]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets, statefulsets, daemonsets]
+    verbs: [get, list, watch]
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Slug }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Slug }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Slug }}
+    namespace: {{ .Slug }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Slug }}
+  namespace: {{ .Slug }}
+  labels:
+    app.kubernetes.io/name: {{ .Slug }}
+spec:
+  # One replica: the collector holds its watches in memory; two would send
+  # everything twice (harmless, but pointless).
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Slug }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Slug }}
+    spec:
+      serviceAccountName: {{ .Slug }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: collector
+          image: COLLECTOR_IMAGE
+          envFrom:
+            - secretRef:
+                name: {{ .Slug }}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]

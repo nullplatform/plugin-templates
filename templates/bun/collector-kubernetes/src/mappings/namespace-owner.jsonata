@@ -1,0 +1,11 @@
+/* Who owns a namespace, from its `team` label: one entity per labelled namespace, by its uid; a namespace without the label is skipped. */
+metadata.labels.team ? {
+  "id": metadata.uid,
+  "data": {
+    "external_id": metadata.uid,
+    "key": $source.slug & "/" & metadata.name,
+    "namespace": metadata.name,
+    "cluster": $source.slug,
+    "team": metadata.labels.team
+  }
+} : null
