@@ -1,0 +1,64 @@
+name: templates
+
+# Every template of manifest.yaml, scaffolded as a tenant gets it and tested:
+# tools/render renders it the way `np package init` does (Go text/template,
+# the category's variables at their defaults, .github/ and scripts/ verbatim),
+# then its own package.json scripts run — test, typecheck, describe — against
+# the dependency versions it declares, from npm. A template that no longer
+# renders, installs, passes or describes fails here, not in a tenant's hands.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  templates:
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.list.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/render/go.mod
+          cache-dependency-path: tools/render/go.sum
+      # Loads the registry as the CLI would (unique ids, variables with defaults) and lists the ids.
+      - id: list
+        working-directory: tools/render
+        run: echo "ids=$(go run . -registry ../.. -list)" >> "$GITHUB_OUTPUT"
+
+  scaffold:
+    needs: templates
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ${{ fromJSON(needs.templates.outputs.ids) }}
+    name: ${{ matrix.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/render/go.mod
+          cache-dependency-path: tools/render/go.sum
+      - uses: oven-sh/setup-bun@v2
+      - name: Scaffold
+        working-directory: tools/render
+        run: go run . -registry ../.. -template "${{ matrix.id }}" -name "CI Example" -out "$RUNNER_TEMP/scaffold"
+      - name: Install
+        working-directory: ${{ runner.temp }}/scaffold
+        run: bun install
+      - name: Test
+        working-directory: ${{ runner.temp }}/scaffold
+        run: bun run test
+      - name: Typecheck
+        working-directory: ${{ runner.temp }}/scaffold
+        run: bun run typecheck
+      # The manifest `np package publish` reads: it must print and parse.
+      - name: Describe
+        working-directory: ${{ runner.temp }}/scaffold
+        run: bun run describe | jq -e '.slug and (.components | type == "array")' > /dev/null
