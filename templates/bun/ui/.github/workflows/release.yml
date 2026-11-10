@@ -16,28 +16,28 @@ on:
 permissions:
   contents: read
 
-env:
-  NP_API_KEY: ${{ secrets.NULLPLATFORM_API_KEY }}
-
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # mise provides bun and runs the package's own tasks.
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
       - name: Install np CLI
         run: |
           curl https://cli.nullplatform.com/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: mise run test
       # The release tag is the version the package revision is published as.
+      # The API key reaches only the two steps that call the platform.
       - name: Publish package
         env:
+          NP_API_KEY: ${{ secrets.NULLPLATFORM_API_KEY }}
           NP_VERSION: ${{ github.event.release.tag_name }}
         run: np package publish --nrn "${{ vars.NP_NRN }}" --version "${NP_VERSION#v}"
       - name: Install the published revision
         if: ${{ vars.NP_INSTALL_NRN != '' }}
         env:
+          NP_API_KEY: ${{ secrets.NULLPLATFORM_API_KEY }}
           NP_VERSION: ${{ github.event.release.tag_name }}
         run: np package install --nrn "${{ vars.NP_INSTALL_NRN }}" --version "${NP_VERSION#v}"
