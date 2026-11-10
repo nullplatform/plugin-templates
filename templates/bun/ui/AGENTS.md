@@ -39,4 +39,7 @@ mise.toml             describe · test · typecheck · build · dev · certs
 - **The version is the revision's.** `np package publish --bump|--version` sets it;
   `manifest.json`'s `version` is informational.
 - **Publish never installs.** `np package install --nrn …` mounts a revision at an
-  NRN; conditional or rolled-out installations are managed from the dashboard.
+  NRN with a plain installation. Conditions (`when`) and rollouts are set through
+  the UI plugin API's installations endpoint (`/plugin_installations`); no
+  dashboard screen edits them yet. The layout editor's catalog, in progress,
+  installs a revision at the level being edited, also as a plain installation.
