@@ -1,0 +1,52 @@
+[tools]
+bun = "latest"
+
+# Install is the root of the task graph: every task depends on it, so a fresh
+# clone just works without remembering `bun install` first.
+[tasks.install]
+description = "Install dependencies"
+run = "bun install"
+sources = ["package.json", "bun.lock"]
+
+# What np package publish reads: the package and its one component, the bundle
+# (a ui_bundle), built from manifest.json. No build needed.
+[tasks.describe]
+description = "Print the package manifest (what np package publish sends)"
+depends = ["install"]
+run = "bunx ui-plugin-sdk describe"
+
+[tasks.test]
+description = "Run the tests: the manifest as the API checks it, and the describe"
+depends = ["install"]
+run = "bun test"
+
+[tasks.typecheck]
+description = "Type-check the package"
+depends = ["install"]
+run = "bunx tsc --noEmit -p ."
+
+# The bundle: one self-contained script, dist/plugin.js, the file np package
+# publish uploads. Publish runs this task first.
+[tasks.build]
+description = "Build the bundle (dist/plugin.js)"
+depends = ["install"]
+run = "bunx vite build"
+sources = ["src/**/*.ts", "src/**/*.tsx", "manifest.json", "vite.config.ts", "package.json", "bun.lock"]
+outputs = ["dist/plugin.js"]
+
+# `np package dev` → rebuilds on every change and serves manifest.json,
+# dist/plugin.js and fixtures.json on https://localhost:4300, ready to load
+# from the dashboard's plugin dev mode. The dashboard loads only https://localhost:
+# create a trusted certificate once with `mise run certs`.
+[tasks.dev]
+description = "Serve the plugin to the dashboard's dev mode, rebuilding on change"
+depends = ["install"]
+run = "bunx ui-plugin-sdk dev --https"
+
+[tasks.certs]
+description = "Create a locally trusted certificate for dev (needs mkcert)"
+run = """
+mkdir -p .certs
+mkcert -install
+mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1
+"""

@@ -47,6 +47,14 @@ categories:
         prompt: Collector name
         hint: "human-readable — e.g. 'Kubernetes Collector', 'GitHub Org Collector', 'CMDB Sync' (slug is auto-derived)"
 
+  - type: ui
+    name: UI plugin
+    description: Add widgets and pages to the nullplatform dashboard — a card on an application's overview, a section of its own, a settings page — in React, sandboxed in the browser, calling only the API it declares.
+    variables:
+      - name: Name
+        prompt: Plugin name
+        hint: "human-readable — e.g. 'Release Radar', 'Cost Summary', 'Runbook Links' (slug is auto-derived)"
+
 sdks:
   - id: bun
     name: Bun
@@ -119,3 +127,20 @@ templates:
       - "mise run dev               # served against the in-memory ingest, with hot reload"
       - "mise run once              # one real snapshot (needs NP_API_KEY)"
       - "mise run publish:image     # build + push the collector image"
+
+  - id: ui-bun
+    name: UI plugin (React/Bun)
+    description: Widgets for the dashboard on @nullplatform/ui-plugin-sdk — manifest.json says where each mounts and what it may call, React components render through the host's own; publish uploads the bundle (no worker, no image), install mounts it at an NRN.
+    path: bun/ui
+    type: ui
+    sdk: bun
+    post_init:
+      - "mise trust mise.toml"
+      - "mise install"
+    next_steps:
+      - "cd {{ .Slug }}"
+      - "mise run test              # the manifest as the API checks it, and the describe"
+      - "mise run certs             # once: a trusted https://localhost certificate (mkcert)"
+      - "np package dev             # rebuilt on change, served to the dashboard's plugin dev mode"
+      - "np package publish         # build + upload the bundle, register the package revision"
+      - "np package install         # mount the revision at an NRN"
