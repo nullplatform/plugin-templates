@@ -25,10 +25,10 @@ describe("manifest.json", () => {
 });
 
 describe("describe", () => {
-  test("is one ui_bundle, uploaded from dist/plugin.js, and no runs: what np package publish registers", () => {
+  test("is one ui_bundle, uploaded from dist/plugin.js, with no worker: what np package publish registers", () => {
     const described = describeUIPlugin(manifest);
     expect(described.slug).toBe(manifest.id);
     expect(described.components.map((component) => [component.resource_type, component.upload?.file])).toEqual([["ui_bundle", "dist/plugin.js"]]);
-    expect(described.runs).toEqual([]);
+    expect([described.worker, described.runs]).toEqual([false, []]);
   });
 });
