@@ -9,9 +9,8 @@ slots `manifest.json` contributes to. The bundle runs in a sandboxed worker in t
 browser and renders through the host's components; it reaches the platform only
 through `useNullplatform()`, and only the calls `permissions` declares. There is
 no worker process and no agent. `describe.ts` is what `np package publish` reads:
-`defineUIBundle` from `@nullplatform/plugin/ui` prints the package (from
-`package.json`) and one `ui_bundle` component (from `manifest.json`). The bundle
-never imports it.
+`defineUIBundle` from `@nullplatform/plugin/ui` prints the package and one
+`ui_bundle` component, both from `manifest.json`. The bundle never imports it.
 
 ## File map
 
@@ -41,9 +40,9 @@ mise.toml             describe · test · typecheck · build · dev · certs
   `vite.config.ts`'s `iife` build and `inlineDynamicImports`.
 - **The version is the revision's.** `np package publish --bump|--version` sets it,
   and publish writes it into the bundle's manifest; `manifest.json`'s `version` is
-  never raised by hand. `package.json`'s is the first publish's.
-- **`package.json`'s `name` is the slug.** It must stay `manifest.json`'s `id`:
-  `defineUIBundle` refuses the describe otherwise.
+  the first publish's and is never raised by hand.
+- **The package is the manifest's.** `describe.ts` names the package by
+  `manifest.json`'s `name`, `id` (the slug) and `description`: edit them there.
 - **Publish never installs.** `np package install --nrn …` mounts a revision at an
   NRN with a plain installation. Conditions (`when`) and rollouts are set through
   the UI plugin API's installations endpoint (`/plugin_installations`); no

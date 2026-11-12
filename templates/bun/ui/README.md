@@ -16,7 +16,7 @@ puts that revision to work at an NRN, where the dashboard mounts it.
 | `manifest.json` | the plugin: `id` (its slug), `contributes` (slot → widget), `permissions` (the API calls it may make) |
 | `src/widgets/` | one React component per widget, exported by name from `src/widgets/index.ts` |
 | `src/index.tsx` | `defineUI({ widgets })`: the bundle's entry |
-| `describe.ts` | `defineUIBundle({ package, manifest })`: what `np package publish` reads; the bundle never imports it |
+| `describe.ts` | `defineUIBundle({ package, manifest })`, both from `manifest.json`: what `np package publish` reads; the bundle never imports it |
 | `fixtures.json` | answers for the API calls while you develop, keyed like `permissions.api` |
 | `test/` | the manifest as the API checks it, and the describe |
 
