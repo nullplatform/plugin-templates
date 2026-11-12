@@ -8,14 +8,17 @@ A nullplatform **UI plugin**: React widgets the dashboard's host mounts in the
 slots `manifest.json` contributes to. The bundle runs in a sandboxed worker in the
 browser and renders through the host's components; it reaches the platform only
 through `useNullplatform()`, and only the calls `permissions` declares. There is
-no worker process and no agent: `--describe` is `ui-plugin-sdk describe`, which
-prints the package and one `ui_bundle` component from `manifest.json`.
+no worker process and no agent. `describe.ts` is what `np package publish` reads:
+`defineUIBundle` from `@nullplatform/plugin/ui` prints the package (from
+`package.json`) and one `ui_bundle` component (from `manifest.json`). The bundle
+never imports it.
 
 ## File map
 
 ```
 manifest.json         the plugin: id (= the package slug), contributes, permissions
 src/index.tsx         defineUI({ widgets }): the bundle's entry
+describe.ts           defineUIBundle({ package, manifest }): what publish reads
 src/widgets/          one component per widget; index.ts exports them by name
 fixtures.json         dev answers for API calls, keyed "METHOD /path/{param}"
 test/*.test.ts        the manifest as the API checks it; the describe
@@ -36,8 +39,11 @@ mise.toml             describe · test · typecheck · build · dev · certs
   exports (`Card`, `Text`, `Stack`, `DataTable`…); there is no DOM to reach.
 - **One script.** `dist/plugin.js` must import nothing at runtime: keep
   `vite.config.ts`'s `iife` build and `inlineDynamicImports`.
-- **The version is the revision's.** `np package publish --bump|--version` sets it;
-  `manifest.json`'s `version` is informational.
+- **The version is the revision's.** `np package publish --bump|--version` sets it,
+  and publish writes it into the bundle's manifest; `manifest.json`'s `version` is
+  never raised by hand. `package.json`'s is the first publish's.
+- **`package.json`'s `name` is the slug.** It must stay `manifest.json`'s `id`:
+  `defineUIBundle` refuses the describe otherwise.
 - **Publish never installs.** `np package install --nrn …` mounts a revision at an
   NRN with a plain installation. Conditions (`when`) and rollouts are set through
   the UI plugin API's installations endpoint (`/plugin_installations`); no

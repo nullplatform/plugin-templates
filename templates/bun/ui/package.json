@@ -5,18 +5,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "describe": "ui-plugin-sdk describe",
+    "describe": "bun describe.ts --describe",
     "build": "vite build",
     "dev": "ui-plugin-sdk dev --https",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@nullplatform/ui-plugin-sdk": "^0.20.0",
+    "@nullplatform/ui-plugin-sdk": "^0.19.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@nullplatform/plugin": "^0.5.0",
     "@types/bun": "^1.2.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

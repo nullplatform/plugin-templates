@@ -16,6 +16,7 @@ puts that revision to work at an NRN, where the dashboard mounts it.
 | `manifest.json` | the plugin: `id` (its slug), `contributes` (slot → widget), `permissions` (the API calls it may make) |
 | `src/widgets/` | one React component per widget, exported by name from `src/widgets/index.ts` |
 | `src/index.tsx` | `defineUI({ widgets })`: the bundle's entry |
+| `describe.ts` | `defineUIBundle({ package, manifest })`: what `np package publish` reads; the bundle never imports it |
 | `fixtures.json` | answers for the API calls while you develop, keyed like `permissions.api` |
 | `test/` | the manifest as the API checks it, and the describe |
 
@@ -43,8 +44,8 @@ np package install --nrn organization=…:account=…:namespace=…:application=
 ```
 
 The version is the revision's: `--bump` (patch by default) or `--version`, as for
-any package; the dashboard runs the revision's version whatever `manifest.json`
-says. Cutting a GitHub Release runs `.github/workflows/release.yml`, which
+any package. Publish writes it into the bundle's manifest, so `manifest.json`'s
+`version` is never raised by hand. Cutting a GitHub Release runs `.github/workflows/release.yml`, which
 publishes from CI (secret `NULLPLATFORM_API_KEY`, variable `NP_NRN`, and
 `NP_INSTALL_NRN` to install).
 

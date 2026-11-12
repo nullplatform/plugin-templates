@@ -9,11 +9,11 @@ run = "bun install"
 sources = ["package.json", "bun.lock"]
 
 # What np package publish reads: the package and its one component, the bundle
-# (a ui_bundle), built from manifest.json. No build needed.
+# (a ui_bundle), described from manifest.json by describe.ts. No build needed.
 [tasks.describe]
 description = "Print the package manifest (what np package publish sends)"
 depends = ["install"]
-run = "bunx ui-plugin-sdk describe"
+run = "bun describe.ts --describe"
 
 [tasks.test]
 description = "Run the tests: the manifest as the API checks it, and the describe"

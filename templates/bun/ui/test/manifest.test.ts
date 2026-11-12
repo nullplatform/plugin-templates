@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { isApiRequestAllowed, validatePublishableManifest, type ApiPermission } from "@nullplatform/ui-plugin-sdk/contract";
-import { describeUIPlugin } from "@nullplatform/ui-plugin-sdk/standard";
+import { plugin } from "../describe";
 import manifest from "../manifest.json";
 import { widgets } from "../src/widgets";
 
@@ -26,9 +26,14 @@ describe("manifest.json", () => {
 
 describe("describe", () => {
   test("is one ui_bundle, uploaded from dist/plugin.js, with no worker: what np package publish registers", () => {
-    const described = describeUIPlugin(manifest);
+    const described = plugin.manifest();
     expect(described.slug).toBe(manifest.id);
     expect(described.components.map((component) => [component.resource_type, component.upload?.file])).toEqual([["ui_bundle", "dist/plugin.js"]]);
     expect([described.worker, described.runs]).toEqual([false, []]);
+  });
+
+  test("publishes manifest.json's version as the one np package publish gives or bumps", () => {
+    const [bundle] = plugin.manifest().components;
+    expect((bundle.resource?.manifest as { version: string }).version).toBe("${version}");
   });
 });
