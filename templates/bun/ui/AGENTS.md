@@ -43,8 +43,8 @@ mise.toml             describe · test · typecheck · build · dev · certs
   the first publish's and is never raised by hand.
 - **The package is the manifest's.** `describe.ts` names the package by
   `manifest.json`'s `name`, `id` (the slug) and `description`: edit them there.
-- **Publish never installs.** `np package install --nrn …` mounts a revision at an
-  NRN with a plain installation. Conditions (`when`) and rollouts are set through
-  the UI plugin API's installations endpoint (`/plugin_installations`); no
-  dashboard screen edits them yet. The layout editor's catalog, in progress,
-  installs a revision at the level being edited, also as a plain installation.
+- **Publish never installs.** `np package install --nrn …` installs a revision at an
+  NRN as any package is installed: an installation of central Packages
+  (`/package_installations`), shown at that NRN and below. `--meta '{…}'` is the
+  widget's config there (what the widget gets at mount), replaced whole; never a
+  secret. Where to show a contribution beyond its NRN is the manifest's `when`.
