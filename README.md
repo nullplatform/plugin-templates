@@ -34,6 +34,7 @@ plugin-templates/
 | simple | bun | Custom command handler (health checks, migrations, ...) |
 | service | bun | Application dependency plugin (databases, caches, ...) |
 | collector | bun | Catalog collector: feed the catalog from a system of record (Kubernetes, GitHub, CMDB, ...) |
+| ui | bun | UI plugin: widgets and pages for the dashboard, React on `@nullplatform/ui-plugin-sdk`; no worker, the bundle is the package's one component |
 
 ## Adding a template
 
@@ -43,6 +44,8 @@ plugin-templates/
 4. Build on the released SDK (`@nullplatform/plugin`, `^0.2.0`): a definition file (`defineScope`, `defineService`, `definePlugin` or `defineCollector`) with its package loaded from the template's `package.json`; `src/index.ts`, `await main(plugin)`, what the agent or the image runs; `src/local.ts`, the same with in-memory ports (`recordingPlatform().fetch`, `noopTracing`, a collector's `InMemoryIngest`) — no environment variable switches a run to local
 5. Test it in-process with `run` from `@nullplatform/plugin/testing`, against the template's own fixtures (`test/fixtures/`)
 6. Add any new variables to the category definition in `manifest.yaml`
+
+A UI template differs: it has no worker, so no `Dockerfile`, `src/local.ts` or `publish:image`. Its definition is `manifest.json`, its describe `describe.ts` (`defineUIBundle` from `@nullplatform/plugin/ui`, a devDependency the bundle never imports), and its `build` task writes the bundle `np package publish` uploads (`dist/plugin.js`).
 7. Include a `README.md` and an `AGENTS.md` — every scaffold ships docs for people and for AI assistants (Claude Code, Cursor, …)
 
 SDKs are not limited to TypeScript/bun: a template owns its whole build via `mise.toml` + its `Dockerfile`, so a Go or Python SDK template plugs in the same way.

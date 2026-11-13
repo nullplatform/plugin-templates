@@ -1,0 +1,25 @@
+{
+  "protocol": 1,
+  "id": "{{ .Slug }}",
+  "version": "0.1.0",
+  "name": "{{ .Name }}",
+  "description": "{{ .Name }}: a widget on the application's overview",
+  "permissions": {
+    "api": [
+      {
+        "method": "GET",
+        "path": "/application/{id}"
+      }
+    ]
+  },
+  "contributes": [
+    {
+      "id": "summary",
+      "slot": "application.overview.sidebar",
+      "widget": "summary",
+      "title": "{{ .Name }}",
+      "height": 160,
+      "requires": ["application"]
+    }
+  ]
+}
